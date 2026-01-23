@@ -1,5 +1,7 @@
 package com.autoecole.saas.tenant;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TenantRepository extends JpaRepository<Tenant, Long> {
+import java.util.UUID;
+
+public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 }

@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -39,7 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().getAuthentication() == null) {
             User user = userRepository.findByEmail(email).orElse(null);
             if (user != null && jwtService.isTokenValid(jwt, user)) {
-                Long tenantId = jwtService.extractTenantId(jwt);
+                UUID tenantId = jwtService.extractTenantId(jwt);
                 TenantContext.setTenantId(tenantId);
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(

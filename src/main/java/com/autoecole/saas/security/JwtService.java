@@ -1,6 +1,5 @@
 package com.autoecole.saas.security;
 
-import com.autoecole.saas.user.Role;
 import com.autoecole.saas.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -31,8 +31,8 @@ public class JwtService {
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
-    public Long extractTenantId(String token) {
-        return extractAllClaims(token).get("tenantId", Long.class);
+    public UUID extractTenantId(String token) {
+        return extractAllClaims(token).get("tenantId", UUID.class);
     }
     private Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
