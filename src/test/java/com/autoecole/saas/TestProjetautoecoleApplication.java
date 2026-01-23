@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.autoecole.saas;
 
 import org.springframework.boot.SpringApplication;
 
