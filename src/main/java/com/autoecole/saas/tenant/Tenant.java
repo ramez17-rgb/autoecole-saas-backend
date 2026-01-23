@@ -1,5 +1,6 @@
 package com.autoecole.saas.tenant;
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tenants")
@@ -7,7 +8,7 @@ public class Tenant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
     @Column(nullable = false, unique = true)
     private String name;
     @Column(nullable = false)
@@ -15,7 +16,7 @@ public class Tenant {
 
     // getters setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
     public String getName() {
@@ -24,7 +25,7 @@ public class Tenant {
     public boolean isActive() {
         return active;
     }
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
     public void setName(String name) {

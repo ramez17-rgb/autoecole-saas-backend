@@ -1,13 +1,14 @@
 package com.autoecole.saas.user;
 import com.autoecole.saas.tenant.Tenant;
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
     @Column(nullable = false, unique = true)
     private String email;
     @Column(nullable = false)
@@ -22,7 +23,7 @@ public class User {
 
     // getters setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
     public String getEmail() {
@@ -31,7 +32,7 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
     public void setPassword(String password) {
