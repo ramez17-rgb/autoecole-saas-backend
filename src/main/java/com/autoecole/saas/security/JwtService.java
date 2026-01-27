@@ -32,7 +32,8 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
     public UUID extractTenantId(String token) {
-        return extractAllClaims(token).get("tenantId", UUID.class);
+        String tenantId = extractAllClaims(token).get("tenantId", String.class);
+        return tenantId != null ? UUID.fromString(tenantId) : null;
     }
     private Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
@@ -54,8 +55,9 @@ public class JwtService {
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole().name())
                 .claim("tenantId",
-                        user.getTenant() != null ? user.getTenant().getId() : null
+                        user.getTenant() != null ? user.getTenant().getId().toString() : null
                 )
+
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
