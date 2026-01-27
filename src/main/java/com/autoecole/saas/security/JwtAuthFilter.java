@@ -12,13 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.util.UUID;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
@@ -26,50 +24,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
     }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getRequestURI().startsWith("/api/auth/");
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/");
     }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-
-        try {
-            String authHeader = request.getHeader("Authorization");
-
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-            String jwt = authHeader.substring(7);
-            String email = jwtService.extractUsername(jwt);
-            if (email != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = userRepository.findByEmail(email).orElse(null);
-                if (user != null && jwtService.isTokenValid(jwt, user)) {
-                    UUID tenantId = jwtService.extractTenantId(jwt);
-                    TenantContext.setTenantId(tenantId);
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    user,
-                                    null,
-                                    jwtService.getAuthorities(user)
-                            );
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
-                    );
-                    SecurityContextHolder.getContext()
-                            .setAuthentication(authToken);
-                }
-            }
+            FilterChain filterChain) throws ServletException, IOException {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-        } finally {
-            TenantContext.clear();
+            return;
         }
+        String jwt = authHeader.substring(7);
+        String email = jwtService.extractUsername(jwt);
+        if (email != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user != null && jwtService.isTokenValid(jwt, user)) {
+                UUID tenantId = jwtService.extractTenantId(jwt);
+                TenantContext.setTenantId(tenantId);
+                // Inject the tenantId into the request attribute so controllers can access it
+                // using @RequestAttribute
+                request.setAttribute("tenantId", tenantId);
+
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        jwtService.getAuthorities(user));
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authToken);
+            }
+        }
+        filterChain.doFilter(request, response);
+        TenantContext.clear();
+
     }
 }
