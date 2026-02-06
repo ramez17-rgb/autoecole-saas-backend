@@ -1,7 +1,11 @@
 package com.autoecole.saas.user;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByEmail(String email); }
+    Optional<User> findByEmail(String email);
+
+    java.util.List<User> findByTenantId(UUID tenantId);
+}
