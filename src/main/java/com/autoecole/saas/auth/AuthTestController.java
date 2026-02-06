@@ -5,6 +5,8 @@ import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.RoleEntity;
 import com.autoecole.saas.user.User;
 import com.autoecole.saas.user.RoleRepository;
+import com.autoecole.saas.monitor.Monitor;
+import com.autoecole.saas.monitor.MonitorRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,17 +20,20 @@ public class AuthTestController {
     private final com.autoecole.saas.user.UserRepository userRepository;
     private final com.autoecole.saas.tenant.TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
+    private final MonitorRepository monitorRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public AuthTestController(JwtService jwtService,
             com.autoecole.saas.user.UserRepository userRepository,
             com.autoecole.saas.tenant.TenantRepository tenantRepository,
             RoleRepository roleRepository,
+            MonitorRepository monitorRepository,
             org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
+        this.monitorRepository = monitorRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -75,5 +80,45 @@ public class AuthTestController {
         }
 
         return "User created: admin@test.com / password";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/api/auth/seed-monitor")
+    public String createMonitorUser() {
+        if (userRepository.findByEmail("monitor@test.com").isPresent()) {
+            return "Monitor User already exists";
+        }
+
+        // Reuse or create Tenant
+        Tenant tenant = tenantRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Tenant newTenant = new Tenant();
+            newTenant.setName("Test AutoEcole");
+            newTenant.setActive(true);
+            return tenantRepository.save(newTenant);
+        });
+
+        RoleEntity monitorRole = roleRepository.findByName("MONITOR")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("MONITOR")));
+
+        User user = new User();
+        user.setEmail("monitor@test.com");
+        user.setPassword(passwordEncoder.encode("password"));
+        user.getRoles().add(monitorRole);
+        user.setTenant(tenant);
+        user.setEnabled(true);
+
+        try {
+            user = userRepository.save(user); // Save user first to get ID
+
+            Monitor monitor = new Monitor();
+            monitor.setTenant(tenant);
+            monitor.setUser(user);
+            monitorRepository.save(monitor);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
+        }
+
+        return "Monitor created: monitor@test.com / password";
     }
 }
