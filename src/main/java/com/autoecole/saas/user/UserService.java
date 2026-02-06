@@ -43,4 +43,12 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    public java.util.List<User> getAllUsersGlobal() {
+        return userRepository.findAll();
+    }
+
+    public java.util.List<User> getUsersForCurrentTenant() {
+        return userRepository.findByTenantId(TenantContext.getTenantId());
+    }
 }

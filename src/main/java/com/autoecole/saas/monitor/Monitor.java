@@ -3,7 +3,6 @@ package com.autoecole.saas.monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
 import jakarta.persistence.*;
-
 import java.util.UUID;
 
 @Entity
@@ -14,15 +13,18 @@ public class Monitor {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @OneToOne
+    @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    // ===== GETTERS & SETTERS =====
+    public Monitor() {
+    }
+
+    // getters & setters
 
     public UUID getId() {
         return id;

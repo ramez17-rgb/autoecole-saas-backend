@@ -1,5 +1,7 @@
 package com.autoecole.saas.monitor;
 
+import com.autoecole.saas.monitor.dto.CreateMonitorRequest;
+import com.autoecole.saas.student.Student;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,38 +17,19 @@ public class MonitorController {
         this.monitorService = monitorService;
     }
 
-    // CREATE
     @PostMapping
-    public Monitor create(
-            @RequestAttribute("tenantId") UUID tenantId,
-            @RequestParam UUID userId
-    ) {
-        return monitorService.create(tenantId, userId);
+    public Monitor create(@RequestBody CreateMonitorRequest request) {
+        return monitorService.createMonitor(request);
     }
 
-    // READ ALL
     @GetMapping
-    public List<Monitor> getAll(
-            @RequestAttribute("tenantId") UUID tenantId
-    ) {
-        return monitorService.getAll(tenantId);
+    public List<Monitor> getAllMonitors() {
+        return monitorService.getAllMonitors();
     }
 
-    // READ ONE
     @GetMapping("/{id}")
-    public Monitor getOne(
-            @RequestAttribute("tenantId") UUID tenantId,
-            @PathVariable UUID id
-    ) {
-        return monitorService.getOne(tenantId, id);
+    public Monitor getMonitor(@PathVariable UUID id) {
+        return monitorService.getMonitor(id);
     }
 
-    // DELETE
-    @DeleteMapping("/{id}")
-    public void delete(
-            @RequestAttribute("tenantId") UUID tenantId,
-            @PathVariable UUID id
-    ) {
-        monitorService.delete(tenantId, id);
-    }
 }
