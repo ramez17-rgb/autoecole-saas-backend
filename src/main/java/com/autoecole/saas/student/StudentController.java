@@ -1,5 +1,6 @@
 package com.autoecole.saas.student;
 
+import com.autoecole.saas.student.dto.CreateStudentRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,11 +17,8 @@ public class StudentController {
     }
 
     @PostMapping
-    public Student createStudent(
-            @RequestParam UUID userId,
-            @RequestParam String level
-    ) {
-        return studentService.createStudent(userId, level);
+    public Student create(@RequestBody CreateStudentRequest request) {
+        return studentService.createStudent(request);
     }
 
     @GetMapping
@@ -38,3 +36,7 @@ public class StudentController {
         studentService.archiveStudent(id);
     }
 }
+
+
+
+

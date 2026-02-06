@@ -16,4 +16,9 @@ public class UserController {
     public User createUser(@RequestBody CreateUserRequest request) {
         return userService.createUser(request);
     }
+
+    @GetMapping
+    public java.util.List<User> getUsers() {
+        return userService.getUsersForCurrentTenant();
+    }
 }
