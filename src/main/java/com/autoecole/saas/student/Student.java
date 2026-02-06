@@ -1,5 +1,6 @@
 package com.autoecole.saas.student;
 
+import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
 import jakarta.persistence.*;
@@ -12,6 +13,9 @@ public class Student {
     @Id
     @GeneratedValue
     private UUID id;
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "main_monitor_id")
+    private Monitor mainMonitor;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
@@ -76,5 +80,13 @@ public class Student {
 
     public void setStatus(StudentStatus status) {
         this.status = status;
+    }
+
+    public Monitor getMainMonitor() {
+        return mainMonitor;
+    }
+
+    public void setMainMonitor(Monitor mainMonitor) {
+        this.mainMonitor = mainMonitor;
     }
 }

@@ -62,20 +62,22 @@ CREATE TABLE user_roles (
 -- STUDENT
 -- =====================================================
 CREATE TABLE students (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL,
-    user_id UUID NOT NULL UNIQUE,
-    level VARCHAR(50),
-    hours_completed INT DEFAULT 0,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'archived')),
-
-    CONSTRAINT fk_student_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_student_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-        ON DELETE CASCADE
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            tenant_id UUID NOT NULL,
+            user_id UUID NOT NULL UNIQUE,
+            main_monitor_id UUID,
+            level VARCHAR(50),
+            hours_completed INT DEFAULT 0,
+            status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'archived')),
+            CONSTRAINT fk_student_user
+                FOREIGN KEY (user_id) REFERENCES users(id)
+                    ON DELETE CASCADE,
+            CONSTRAINT fk_student_tenant
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+                        ON DELETE CASCADE,
+            CONSTRAINT fk_student_main_monitor
+                FOREIGN KEY (main_monitor_id) REFERENCES monitors(id)
+                        ON DELETE SET NULL
 );
 
 -- =====================================================

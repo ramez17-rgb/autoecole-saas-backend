@@ -1,5 +1,7 @@
 package com.autoecole.saas.student;
 
+import com.autoecole.saas.monitor.Monitor;
+import com.autoecole.saas.monitor.MonitorRepository;
 import com.autoecole.saas.student.dto.CreateStudentRequest;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.tenant.TenantContext;
@@ -17,7 +19,7 @@ import java.util.UUID;
 
 @Service
 public class StudentService {
-
+    private final MonitorRepository monitorRepository;
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final TenantRepository tenantRepository;
@@ -25,11 +27,13 @@ public class StudentService {
     private final PasswordEncoder passwordEncoder;
 
     public StudentService(
+            MonitorRepository monitorRepository,
             UserRepository userRepository,
             StudentRepository studentRepository,
             TenantRepository tenantRepository,
             RoleRepository roleRepository,
             PasswordEncoder passwordEncoder) {
+        this.monitorRepository = monitorRepository;
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
@@ -66,6 +70,28 @@ public class StudentService {
         student.setLevel(request.getLevel());
         student.setStatus(StudentStatus.active);
 
+        return studentRepository.save(student);
+    }
+
+    @Transactional
+    public Student assignMainMonitor(UUID studentId, UUID monitorId) {
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        Student student = studentRepository
+                .findByIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        Monitor monitor = monitorRepository
+                .findById(monitorId)
+                .orElseThrow(() -> new RuntimeException("Monitor not found"));
+
+        // tenant safety check
+        if (!monitor.getTenant().getId().equals(tenantId)) {
+            throw new RuntimeException("Cross-tenant access forbidden");
+        }
+
+        student.setMainMonitor(monitor);
         return studentRepository.save(student);
     }
 
