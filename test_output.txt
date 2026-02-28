@@ -1,0 +1,8 @@
+=============== DEBUG RUNNER START ===============
+Total students in DB: 1
+Student ID: e953c722-aec2-4073-9dfc-1ebf5e4e527d | Tenant: e4d777b4-62c2-413e-9ba4-4c43a817ab10 | Level: BEGINNER
+findByIdAndTenantId works? true
+Total monitors in DB: 2
+Monitor ID: 0925de8b-b687-4fe5-810b-3feb0c7b389f | Tenant: e5209b2a-b3d7-4e30-ae0a-d22f3ed72fb4
+Monitor ID: a92e7c78-9932-4b98-9a1c-3a82d6ebe35b | Tenant: e4d777b4-62c2-413e-9ba4-4c43a817ab10
+=============== DEBUG RUNNER END ===============
