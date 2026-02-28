@@ -99,10 +99,9 @@ CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     user_id UUID NOT NULL UNIQUE,
-
+    main_monitor_id UUID,
     level VARCHAR(50),
     hours_completed INT DEFAULT 0,
-
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','archived'))
         DEFAULT 'active',
@@ -111,11 +110,14 @@ CREATE TABLE students (
         FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE,
-
     CONSTRAINT fk_student_tenant
         FOREIGN KEY (tenant_id)
         REFERENCES tenants(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_student_main_monitor
+        FOREIGN KEY (main_monitor_id)
+        REFERENCES monitors(id)
+        ON DELETE SET NULL
 );
 
 -- =====================================================
@@ -145,15 +147,16 @@ CREATE TABLE sessions (
     tenant_id UUID NOT NULL,
     monitor_id UUID NOT NULL,
 
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
-
-    type VARCHAR(20) NOT NULL
-        CHECK (type IN ('theory','practice')),
+    session_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
 
     status VARCHAR(20) NOT NULL
-        CHECK (status IN ('planned','done','canceled'))
-        DEFAULT 'planned',
+        CHECK (status IN ('PLANNED','COMPLETED','CANCELLED'))
+        DEFAULT 'PLANNED',
+
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT now(),
 
     CONSTRAINT fk_session_tenant
         FOREIGN KEY (tenant_id)
@@ -208,6 +211,9 @@ CREATE TABLE exams (
 
     result VARCHAR(20)
         CHECK (result IN ('success','fail','absent')),
+        
+    score INT,
+    created_at TIMESTAMP DEFAULT now(),
 
     CONSTRAINT fk_exam_tenant
         FOREIGN KEY (tenant_id)
@@ -291,3 +297,51 @@ CREATE INDEX idx_sessions_tenant ON sessions(tenant_id);
 CREATE INDEX idx_exams_tenant ON exams(tenant_id);
 CREATE INDEX idx_payments_tenant ON payments(tenant_id);
 CREATE INDEX idx_audit_tenant ON audit_logs(tenant_id);
+
+
+
+-- =====================================================
+-- MOCK TESTS & QUESTIONS (Sprint 4)
+-- =====================================================
+CREATE TABLE questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    question_text TEXT NOT NULL,
+    correct_answer VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    CONSTRAINT fk_questions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+
+CREATE TABLE question_options (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    question_id UUID NOT NULL,
+    option_text VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_qo_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE mock_tests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL,
+    student_id UUID NOT NULL,
+    score INT,
+    total_questions INT NOT NULL DEFAULT 40,
+    passed BOOLEAN,
+    taken_at TIMESTAMP DEFAULT now(),
+    CONSTRAINT fk_mock_test_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mock_test_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE mock_test_answers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    mock_test_id UUID NOT NULL,
+    question_id UUID NOT NULL,
+    selected_answer VARCHAR(255),
+    is_correct BOOLEAN,
+    CONSTRAINT fk_mta_mock_test FOREIGN KEY (mock_test_id) REFERENCES mock_tests(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mta_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_questions_tenant ON questions(tenant_id);
+CREATE INDEX idx_mock_tests_tenant ON mock_tests(tenant_id);
+CREATE INDEX idx_mock_tests_student ON mock_tests(student_id);
