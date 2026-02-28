@@ -1,7 +1,6 @@
 -- =====================================================
 -- EXTENSIONS
 -- =====================================================
--- Needed for UUID generation (optional but recommended)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
@@ -11,8 +10,17 @@ CREATE TABLE tenants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     address TEXT,
-    contact_email VARCHAR(150),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'suspended')),
+    contact_email VARCHAR(150) NOT NULL,
+    contact_phone VARCHAR(20),
+
+    -- Cycle de vie SaaS
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('PENDING','ACTIVE','SUSPENDED','REJECTED'))
+        DEFAULT 'PENDING',
+
+    refusal_reason TEXT,
+    validated_at TIMESTAMP NULL,
+
     created_at TIMESTAMP DEFAULT now()
 );
 
@@ -21,14 +29,21 @@ CREATE TABLE tenants (
 -- =====================================================
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
     tenant_id UUID NOT NULL,
+
     email VARCHAR(150) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'disabled')),
+    password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
+
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('active','disabled'))
+        DEFAULT 'disabled',
+
     created_at TIMESTAMP DEFAULT now(),
 
     CONSTRAINT fk_user_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE
 );
 
@@ -50,11 +65,30 @@ CREATE TABLE user_roles (
     PRIMARY KEY (user_id, role_id),
 
     CONSTRAINT fk_user_roles_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_user_roles_role
-        FOREIGN KEY (role_id) REFERENCES roles(id)
+        FOREIGN KEY (role_id)
+        REFERENCES roles(id)
+        ON DELETE CASCADE
+);
+
+-- =====================================================
+-- PASSWORD SETUP TOKEN (Activation sécurisée)
+-- =====================================================
+CREATE TABLE password_setup_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    user_id UUID NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_password_token_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE
 );
 
@@ -65,16 +99,22 @@ CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     user_id UUID NOT NULL UNIQUE,
+
     level VARCHAR(50),
     hours_completed INT DEFAULT 0,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'archived')),
+
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('active','archived'))
+        DEFAULT 'active',
 
     CONSTRAINT fk_student_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_student_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE
 );
 
@@ -87,11 +127,13 @@ CREATE TABLE monitors (
     user_id UUID NOT NULL UNIQUE,
 
     CONSTRAINT fk_monitor_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_monitor_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE
 );
 
@@ -102,17 +144,25 @@ CREATE TABLE sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     monitor_id UUID NOT NULL,
+
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('theory', 'practice')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('planned', 'done', 'canceled')),
+
+    type VARCHAR(20) NOT NULL
+        CHECK (type IN ('theory','practice')),
+
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('planned','done','canceled'))
+        DEFAULT 'planned',
 
     CONSTRAINT fk_session_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_session_monitor
-        FOREIGN KEY (monitor_id) REFERENCES monitors(id)
+        FOREIGN KEY (monitor_id)
+        REFERENCES monitors(id)
         ON DELETE CASCADE,
 
     CONSTRAINT chk_session_time
@@ -129,11 +179,13 @@ CREATE TABLE session_students (
     PRIMARY KEY (session_id, student_id),
 
     CONSTRAINT fk_ss_session
-        FOREIGN KEY (session_id) REFERENCES sessions(id)
+        FOREIGN KEY (session_id)
+        REFERENCES sessions(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_ss_student
-        FOREIGN KEY (student_id) REFERENCES students(id)
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
         ON DELETE CASCADE
 );
 
@@ -144,17 +196,27 @@ CREATE TABLE exams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     student_id UUID NOT NULL,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('code', 'driving')),
+
+    type VARCHAR(20) NOT NULL
+        CHECK (type IN ('code','driving')),
+
     date DATE NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('planned', 'done')),
-    result VARCHAR(20) CHECK (result IN ('success', 'fail', 'absent')),
+
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('planned','done'))
+        DEFAULT 'planned',
+
+    result VARCHAR(20)
+        CHECK (result IN ('success','fail','absent')),
 
     CONSTRAINT fk_exam_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_exam_student
-        FOREIGN KEY (student_id) REFERENCES students(id)
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
         ON DELETE CASCADE
 );
 
@@ -165,16 +227,21 @@ CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     student_id UUID NOT NULL,
+
     amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
     payment_date DATE NOT NULL,
-    mode VARCHAR(20) NOT NULL CHECK (mode IN ('cash', 'transfer')),
+
+    mode VARCHAR(20) NOT NULL
+        CHECK (mode IN ('cash','transfer')),
 
     CONSTRAINT fk_payment_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_payment_student
-        FOREIGN KEY (student_id) REFERENCES students(id)
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
         ON DELETE CASCADE
 );
 
@@ -187,7 +254,8 @@ CREATE TABLE receipts (
     pdf_reference TEXT,
 
     CONSTRAINT fk_receipt_payment
-        FOREIGN KEY (payment_id) REFERENCES payments(id)
+        FOREIGN KEY (payment_id)
+        REFERENCES payments(id)
         ON DELETE CASCADE
 );
 
@@ -198,20 +266,23 @@ CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     user_id UUID NOT NULL,
+
     action TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT now(),
 
     CONSTRAINT fk_audit_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_audit_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE
 );
 
 -- =====================================================
--- INDEXES (Performance)
+-- INDEXES (Performance Multi-Tenant)
 -- =====================================================
 CREATE INDEX idx_users_tenant ON users(tenant_id);
 CREATE INDEX idx_students_tenant ON students(tenant_id);

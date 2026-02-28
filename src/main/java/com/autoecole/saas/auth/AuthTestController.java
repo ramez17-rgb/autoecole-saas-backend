@@ -60,7 +60,7 @@ public class AuthTestController {
 
         Tenant tenant = new Tenant();
         tenant.setName("Test AutoEcole");
-        tenant.setActive(true);
+        tenant.setStatus("ACTIVE");
         tenant = tenantRepository.save(tenant);
 
         RoleEntity adminRole = roleRepository.findByName("ADMIN")
@@ -92,7 +92,7 @@ public class AuthTestController {
         Tenant tenant = tenantRepository.findAll().stream().findFirst().orElseGet(() -> {
             Tenant newTenant = new Tenant();
             newTenant.setName("Test AutoEcole");
-            newTenant.setActive(true);
+            newTenant.setStatus("ACTIVE");
             return tenantRepository.save(newTenant);
         });
 
@@ -120,5 +120,26 @@ public class AuthTestController {
         }
 
         return "Monitor created: monitor@test.com / password";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/api/auth/seed-super-admin")
+    public String createSuperAdmin() {
+        if (userRepository.findByEmail("superadmin@test.com").isPresent()) {
+            return "Super Admin already exists";
+        }
+
+        RoleEntity superAdminRole = roleRepository.findByName("SUPER_ADMIN")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("SUPER_ADMIN")));
+
+        User user = new User();
+        user.setEmail("superadmin@test.com");
+        user.setPassword(passwordEncoder.encode("password"));
+        user.getRoles().add(superAdminRole);
+        user.setTenant(null); // Global user
+        user.setEnabled(true);
+
+        userRepository.save(user);
+
+        return "Super Admin created: superadmin@test.com / password";
     }
 }

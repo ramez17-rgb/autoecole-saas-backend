@@ -35,8 +35,11 @@ public class StudentController {
     public void archiveStudent(@PathVariable UUID id) {
         studentService.archiveStudent(id);
     }
+
+    @PutMapping("/{studentId}/main-monitor/{monitorId}")
+    public Student assignMainMonitor(
+            @PathVariable UUID studentId,
+            @PathVariable UUID monitorId) {
+        return studentService.assignMainMonitor(studentId, monitorId);
+    }
 }
-
-
-
-

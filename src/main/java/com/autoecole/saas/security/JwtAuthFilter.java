@@ -41,28 +41,46 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String jwt = authHeader.substring(7);
-        String email = jwtService.extractUsername(jwt);
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user != null && jwtService.isTokenValid(jwt, user)) {
-                UUID tenantId = jwtService.extractTenantId(jwt);
-                TenantContext.setTenantId(tenantId);
-                // Inject the tenantId into the request attribute so controllers can access it
-                // using @RequestAttribute
-                request.setAttribute("tenantId", tenantId);
+        try {
+            String jwt = authHeader.substring(7);
+            String email = jwtService.extractUsername(jwt);
+            if (email != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userRepository.findByEmail(email).orElse(null);
+                if (user != null && jwtService.isTokenValid(jwt, user)) {
+                    if (user.getTenant() != null && !user.getTenant().isActive()) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                    UUID tenantId = jwtService.extractTenantId(jwt);
+                    TenantContext.setTenantId(tenantId);
+                    // Inject the tenantId into the request attribute so controllers can access it
+                    // using @RequestAttribute
+                    request.setAttribute("tenantId", tenantId);
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        user,
-                        null,
-                        jwtService.getAuthorities(user));
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request));
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authToken);
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            user,
+                            null,
+                            jwtService.getAuthorities(user));
+
+                    // DEBUG: Log authorities
+                    System.out.println("Authenticated User: " + user.getEmail());
+                    System.out.println("Authorities: " + authToken.getAuthorities());
+
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request));
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Log the error (optional) and continue without authentication
+            System.err.println("JWT Authentication Warning: " + e.getMessage());
+            e.printStackTrace();
+            // This allows public endpoints to work even if an invalid/expired token is sent
+            // Protected endpoints will still fail with 403/401 due to missing
+            // authentication
         }
         filterChain.doFilter(request, response);
         TenantContext.clear();
