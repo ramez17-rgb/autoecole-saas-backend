@@ -78,9 +78,14 @@ public class StudentService {
 
         UUID tenantId = TenantContext.getTenantId();
 
-        Student student = studentRepository
-                .findByIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student with ID " + studentId
+                        + " not found. Make sure you are using the Student ID, not the User ID."));
+
+        if (!student.getTenant().getId().equals(tenantId)) {
+            throw new RuntimeException(
+                    "Student exists but belongs to a different tenant. Cross-tenant access forbidden.");
+        }
 
         Monitor monitor = monitorRepository
                 .findById(monitorId)

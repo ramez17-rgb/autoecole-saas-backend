@@ -37,8 +37,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/auth").permitAll()
+                        .requestMatchers("/api/tenants/register").permitAll() // Allow tenant registration
                         .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "TENANT_ADMIN")
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

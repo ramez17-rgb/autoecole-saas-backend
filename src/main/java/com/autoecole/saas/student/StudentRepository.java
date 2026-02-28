@@ -7,6 +7,6 @@ import java.util.UUID;
 
 public interface StudentRepository extends JpaRepository<Student, UUID> {
     List<Student> findByTenantId(UUID tenantId);
-    Optional<Student> findByIdAndTenantId(UUID id, UUID tenantId);
 
+    Optional<Student> findByIdAndTenantId(UUID id, UUID tenantId);
 }
