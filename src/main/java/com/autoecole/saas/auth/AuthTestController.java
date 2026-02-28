@@ -61,6 +61,7 @@ public class AuthTestController {
         Tenant tenant = new Tenant();
         tenant.setName("Test AutoEcole");
         tenant.setStatus("ACTIVE");
+        tenant.setContactEmail("test@autoecole.com");
         tenant = tenantRepository.save(tenant);
 
         RoleEntity adminRole = roleRepository.findByName("ADMIN")
@@ -93,6 +94,7 @@ public class AuthTestController {
             Tenant newTenant = new Tenant();
             newTenant.setName("Test AutoEcole");
             newTenant.setStatus("ACTIVE");
+            newTenant.setContactEmail("monitor_test@autoecole.com");
             return tenantRepository.save(newTenant);
         });
 
@@ -131,11 +133,20 @@ public class AuthTestController {
         RoleEntity superAdminRole = roleRepository.findByName("SUPER_ADMIN")
                 .orElseGet(() -> roleRepository.save(new RoleEntity("SUPER_ADMIN")));
 
+        // Super Admin needs a tenant ID due to database strictness
+        Tenant dummyTenant = tenantRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Tenant newTenant = new Tenant();
+            newTenant.setName("Super Admin Global Tenant");
+            newTenant.setStatus("ACTIVE");
+            newTenant.setContactEmail("superadmin@autoecole.com");
+            return tenantRepository.save(newTenant);
+        });
+
         User user = new User();
         user.setEmail("superadmin@test.com");
         user.setPassword(passwordEncoder.encode("password"));
         user.getRoles().add(superAdminRole);
-        user.setTenant(null); // Global user
+        user.setTenant(dummyTenant); // Global user dummy tenant
         user.setEnabled(true);
 
         userRepository.save(user);

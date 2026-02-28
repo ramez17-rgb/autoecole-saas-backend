@@ -37,6 +37,17 @@ public class Student {
     public Student() {
     }
 
+    @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
+    private java.util.List<com.autoecole.saas.session.Session> sessions = new java.util.ArrayList<>();
+
+    public java.util.List<com.autoecole.saas.session.Session> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(java.util.List<com.autoecole.saas.session.Session> sessions) {
+        this.sessions = sessions;
+    }
+
     // ===== Getters & Setters =====
     public UUID getId() {
         return id;

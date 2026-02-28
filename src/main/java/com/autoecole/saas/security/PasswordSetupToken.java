@@ -13,26 +13,20 @@ public class PasswordSetupToken {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "user_id")
-    private User user;
-
-    @Column(nullable = false)
-    private LocalDateTime expiryDate;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
     @Column(nullable = false)
     private boolean used = false;
 
     public PasswordSetupToken() {
-    }
-
-    public PasswordSetupToken(String token, User user, LocalDateTime expiryDate) {
-        this.token = token;
-        this.user = user;
-        this.expiryDate = expiryDate;
     }
 
     public UUID getId() {
@@ -43,14 +37,6 @@ public class PasswordSetupToken {
         this.id = id;
     }
 
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
     public User getUser() {
         return user;
     }
@@ -59,12 +45,24 @@ public class PasswordSetupToken {
         this.user = user;
     }
 
-    public LocalDateTime getExpiryDate() {
-        return expiryDate;
+    public String getToken() {
+        return token;
     }
 
-    public void setExpiryDate(LocalDateTime expiryDate) {
-        this.expiryDate = expiryDate;
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiresAt);
     }
 
     public boolean isUsed() {
@@ -73,9 +71,5 @@ public class PasswordSetupToken {
 
     public void setUsed(boolean used) {
         this.used = used;
-    }
-
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
     }
 }
