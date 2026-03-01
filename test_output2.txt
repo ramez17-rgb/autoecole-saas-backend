@@ -1,0 +1,5 @@
+=============== DEBUG RUNNER START ===============
+Found user: youssef@paris.com
+Tenant ID: 53128ade-ca9b-453d-a945-163a6a1adcb4
+Role: TENANT_ADMIN
+=============== DEBUG RUNNER END ===============

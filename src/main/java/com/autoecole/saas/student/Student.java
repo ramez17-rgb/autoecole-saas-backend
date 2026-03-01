@@ -1,5 +1,4 @@
 package com.autoecole.saas.student;
-
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
