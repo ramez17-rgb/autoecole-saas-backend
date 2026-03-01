@@ -1,0 +1,11 @@
+=============== REGISTRATION TEST RUNNER START ===============
+Caught Exception:
+could not execute statement [ERROR: duplicate key value violates unique constraint "users_email_key"
+  Detail: Key (email)=(testrunner@arabe.com) already exists.] [insert into users (email,password_hash,status,tenant_id,id) values (?,?,?,?,?)]; SQL [insert into users (email,password_hash,status,tenant_id,id) values (?,?,?,?,?)]; constraint [users_email_key]
+Cause:
+could not execute statement [ERROR: duplicate key value violates unique constraint "users_email_key"
+  Detail: Key (email)=(testrunner@arabe.com) already exists.] [insert into users (email,password_hash,status,tenant_id,id) values (?,?,?,?,?)]
+Root Cause:
+ERROR: duplicate key value violates unique constraint "users_email_key"
+  Detail: Key (email)=(testrunner@arabe.com) already exists.
+=============== REGISTRATION TEST RUNNER END ===============

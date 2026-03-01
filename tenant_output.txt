@@ -1,0 +1,4 @@
+=============== VALIDATION RUNNER START ===============
+Found tenant: b2d1d415-b54e-46c9-b508-6ea1d767334c - PENDING
+Validated! Setup token: ad8517f3-1600-4cab-bf65-5b88fddf8a7c
+=============== VALIDATION RUNNER END ===============
