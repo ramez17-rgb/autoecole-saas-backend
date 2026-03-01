@@ -22,9 +22,9 @@ public class SuperAdminService {
     private final EmailService emailService;
 
     public SuperAdminService(TenantRepository tenantRepository,
-            UserRepository userRepository,
-            PasswordSetupTokenRepository tokenRepository,
-            EmailService emailService) {
+                             UserRepository userRepository,
+                             PasswordSetupTokenRepository tokenRepository,
+                             EmailService emailService) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
