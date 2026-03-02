@@ -34,7 +34,7 @@ public class TenantApprovalService {
     }
 
     @Transactional
-    public void approveTenant(UUID tenantId) {
+    public String approveTenant(UUID tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
 
@@ -61,6 +61,8 @@ public class TenantApprovalService {
         // 4. Send Email
         String setupUrl = baseUrl + "/setup-password?token=" + setupToken.getToken();
         emailService.sendPasswordSetup(adminUser.getEmail(), setupUrl);
+
+        return setupToken.getToken();
     }
 
     @Transactional
