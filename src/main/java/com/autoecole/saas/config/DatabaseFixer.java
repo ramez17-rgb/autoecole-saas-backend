@@ -23,13 +23,5 @@ public class DatabaseFixer implements CommandLineRunner {
             System.out.println("Database fix (users.tenant_id) failed: " + e.getMessage());
         }
 
-        try {
-            System.out.println(
-                    "Applying database fix: Dropping conflicting expires_at column from password_setup_tokens");
-            jdbcTemplate.execute("ALTER TABLE password_setup_tokens DROP COLUMN IF EXISTS expires_at");
-            System.out.println("Database fix (password_setup_tokens.expires_at) applied successfully.");
-        } catch (Exception e) {
-            System.out.println("Database fix (password_setup_tokens.expires_at) failed: " + e.getMessage());
-        }
     }
 }

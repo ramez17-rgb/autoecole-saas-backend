@@ -3,7 +3,6 @@ package com.autoecole.saas.tenant;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/super-admin/tenants")
@@ -24,15 +23,22 @@ public class SuperAdminTenantController {
     }
 
     @PostMapping("/{id}/approve")
-    public void approve(@PathVariable UUID id) {
-        tenantApprovalService.approveTenant(id);
+    public TenantApprovalResponse approve(@PathVariable java.util.UUID id) {
+        String token = tenantApprovalService.approveTenant(id);
+        return new TenantApprovalResponse(
+                "Tenant approved successfully",
+                token,
+                "/api/auth/setup-password?token=" + token);
     }
 
     @PostMapping("/{id}/reject")
-    public void reject(@PathVariable UUID id, @RequestBody RejectRequest request) {
+    public void reject(@PathVariable java.util.UUID id, @RequestBody RejectRequest request) {
         tenantApprovalService.rejectTenant(id, request.reason());
     }
 
     public record RejectRequest(String reason) {
+    }
+
+    public record TenantApprovalResponse(String message, String setupToken, String exampleSetupUrl) {
     }
 }
