@@ -30,7 +30,7 @@ CREATE TABLE tenants (
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-    tenant_id UUID NOT NULL,
+    tenant_id UUID,
 
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
@@ -97,7 +97,9 @@ CREATE TABLE password_setup_tokens (
 -- =====================================================
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL,
+    tenant_id UUID,
+    nom VARCHAR(100),
+    prenom VARCHAR(100),
     user_id UUID NOT NULL UNIQUE,
     main_monitor_id UUID,
     level VARCHAR(50),
@@ -114,10 +116,32 @@ CREATE TABLE students (
         FOREIGN KEY (tenant_id)
         REFERENCES tenants(id)
         ON DELETE CASCADE,
-    CONSTRAINT fk_student_main_monitor
         FOREIGN KEY (main_monitor_id)
         REFERENCES monitors(id)
         ON DELETE SET NULL
+);
+
+-- =====================================================
+-- ENROLLMENT REQUESTS
+-- =====================================================
+CREATE TABLE enrollment_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID NOT NULL,
+    tenant_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('PENDING','APPROVED','REJECTED','CANCELLED'))
+        DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT now(),
+
+    CONSTRAINT fk_en_req_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_en_req_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
 );
 
 -- =====================================================

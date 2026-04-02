@@ -4,18 +4,18 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public class PaymentRequest {
-    private UUID contractId;
+    private UUID studentId;
     private BigDecimal amount;
 
     public PaymentRequest() {
     }
 
-    public UUID getContractId() {
-        return contractId;
+    public UUID getStudentId() {
+        return studentId;
     }
 
-    public void setContractId(UUID contractId) {
-        this.contractId = contractId;
+    public void setStudentId(UUID studentId) {
+        this.studentId = studentId;
     }
 
     public BigDecimal getAmount() {

@@ -4,35 +4,20 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public class PaymentProgressResponse {
-    private UUID contractId;
-    private BigDecimal totalPrice;
+    private UUID studentId;
     private BigDecimal totalPaid;
-    private BigDecimal remainingAmount;
-    private double percentagePaid;
 
-    public PaymentProgressResponse(UUID contractId, BigDecimal totalPrice, BigDecimal totalPaid,
-            BigDecimal remainingAmount, double percentagePaid) {
-        this.contractId = contractId;
-        this.totalPrice = totalPrice;
+    public PaymentProgressResponse(UUID studentId, BigDecimal totalPaid) {
+        this.studentId = studentId;
         this.totalPaid = totalPaid;
-        this.remainingAmount = remainingAmount;
-        this.percentagePaid = percentagePaid;
     }
 
-    public UUID getContractId() {
-        return contractId;
+    public UUID getStudentId() {
+        return studentId;
     }
 
-    public void setContractId(UUID contractId) {
-        this.contractId = contractId;
-    }
-
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
-    }
-
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
+    public void setStudentId(UUID studentId) {
+        this.studentId = studentId;
     }
 
     public BigDecimal getTotalPaid() {
@@ -41,21 +26,5 @@ public class PaymentProgressResponse {
 
     public void setTotalPaid(BigDecimal totalPaid) {
         this.totalPaid = totalPaid;
-    }
-
-    public BigDecimal getRemainingAmount() {
-        return remainingAmount;
-    }
-
-    public void setRemainingAmount(BigDecimal remainingAmount) {
-        this.remainingAmount = remainingAmount;
-    }
-
-    public double getPercentagePaid() {
-        return percentagePaid;
-    }
-
-    public void setPercentagePaid(double percentagePaid) {
-        this.percentagePaid = percentagePaid;
     }
 }

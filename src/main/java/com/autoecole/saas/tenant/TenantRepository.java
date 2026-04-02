@@ -9,4 +9,5 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
     // Check if a tenant with this contact email already exists (if needed for
     // registration)
     // Optional<Tenant> findByContactEmail(String contactEmail);
+    java.util.List<Tenant> findByStatus(String status);
 }

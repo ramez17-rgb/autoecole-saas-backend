@@ -5,8 +5,8 @@ import com.autoecole.saas.payment.dto.PaymentProgressResponse;
 import com.autoecole.saas.payment.dto.PaymentRequest;
 import com.autoecole.saas.payment.dto.PaymentResponse;
 import com.autoecole.saas.payment.dto.PaymentStatsResponse;
-import com.autoecole.saas.student.StudentContract;
-import com.autoecole.saas.student.StudentContractRepository;
+import com.autoecole.saas.student.Student;
+import com.autoecole.saas.student.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final StudentContractRepository contractRepository;
+    private final StudentRepository studentRepository;
     private final ReceiptRepository receiptRepository;
     private final AuditService auditService;
     private final QrCodeService qrCodeService;
@@ -34,14 +34,14 @@ public class PaymentService {
 
     @Autowired
     public PaymentService(PaymentRepository paymentRepository,
-            StudentContractRepository contractRepository,
+            StudentRepository studentRepository,
             ReceiptRepository receiptRepository,
             AuditService auditService,
             QrCodeService qrCodeService,
             PdfService pdfService,
             ReceiptService receiptService) {
         this.paymentRepository = paymentRepository;
-        this.contractRepository = contractRepository;
+        this.studentRepository = studentRepository;
         this.receiptRepository = receiptRepository;
         this.auditService = auditService;
         this.qrCodeService = qrCodeService;
@@ -51,18 +51,17 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse recordPayment(UUID tenantId, UUID userId, PaymentRequest request) {
-        StudentContract contract = contractRepository.findById(request.getContractId())
-                .orElseThrow(() -> new RuntimeException("Contract not found"));
+        Student student = studentRepository.findById(request.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        if (!contract.getTenant().getId().equals(tenantId)) {
-            throw new RuntimeException("Contract does not belong to the tenant");
+        if (!student.getTenant().getId().equals(tenantId)) {
+            throw new RuntimeException("Student does not belong to the tenant");
         }
 
         // Save Payment
         Payment payment = new Payment();
-        payment.setTenant(contract.getTenant());
-        payment.setStudent(contract.getStudent());
-        payment.setContract(contract);
+        payment.setTenant(student.getTenant());
+        payment.setStudent(student);
         payment.setAmount(request.getAmount());
         Payment savedPayment = paymentRepository.save(payment);
 
@@ -79,14 +78,14 @@ public class PaymentService {
                 savedPayment.getAmount().toString()));
 
         // Calculate Total Paid so far for PDF
-        BigDecimal totalPaid = paymentRepository.sumAmountByContractId(contract.getId());
+        BigDecimal totalPaid = paymentRepository.sumAmountByStudentId(student.getId());
 
         // Generate QR Code
         String verificationUrl = baseUrl + "/api/receipts/verify/" + receipt.getVerificationCode().toString();
         byte[] qrCodeBytes = qrCodeService.generateQrCode(verificationUrl, 200, 200);
 
         // Generate PDF
-        String pdfPath = pdfService.generateReceiptPdf(receipt, contract, totalPaid, qrCodeBytes);
+        String pdfPath = pdfService.generateReceiptPdf(receipt, student, totalPaid, qrCodeBytes);
         receipt.setPdfPath(pdfPath);
 
         receiptRepository.save(receipt);
@@ -95,35 +94,21 @@ public class PaymentService {
 
         return new PaymentResponse(
                 savedPayment.getId(),
-                contract.getId(),
+                student.getId(),
                 savedPayment.getAmount(),
                 savedPayment.getPaymentDate(),
                 pdfPath);
     }
 
-    public PaymentProgressResponse getPaymentProgress(UUID contractId) {
-        StudentContract contract = contractRepository.findById(contractId)
-                .orElseThrow(() -> new RuntimeException("Contract not found"));
+    public PaymentProgressResponse getPaymentProgress(UUID studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        BigDecimal totalPaid = paymentRepository.sumAmountByContractId(contractId);
-        BigDecimal remainingAmount = contract.getTotalPrice().subtract(totalPaid);
-        if (remainingAmount.compareTo(BigDecimal.ZERO) < 0) {
-            remainingAmount = BigDecimal.ZERO;
-        }
-
-        double percentagePaid = 0.0;
-        if (contract.getTotalPrice().compareTo(BigDecimal.ZERO) > 0) {
-            percentagePaid = totalPaid.divide(contract.getTotalPrice(), 4, RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal("100"))
-                    .doubleValue();
-        }
+        BigDecimal totalPaid = paymentRepository.sumAmountByStudentId(studentId);
 
         return new PaymentProgressResponse(
-                contract.getId(),
-                contract.getTotalPrice(),
-                totalPaid,
-                remainingAmount,
-                percentagePaid);
+                student.getId(),
+                totalPaid);
     }
 
     public PaymentStatsResponse getPaymentStats(UUID tenantId) {
@@ -135,14 +120,10 @@ public class PaymentService {
             averagePayment = totalRevenue.divide(new BigDecimal(numberOfPayments), 2, RoundingMode.HALF_UP);
         }
 
-        List<UUID> fullyPaidContracts = paymentRepository.findContractsFullyPaidByTenantId(tenantId);
-        int studentsFullyPaid = fullyPaidContracts.size();
-
         return new PaymentStatsResponse(
                 totalRevenue,
                 numberOfPayments,
-                averagePayment,
-                studentsFullyPaid);
+                averagePayment);
     }
 
     private String generateReceiptNumber() {

@@ -68,6 +68,8 @@ public class StudentService {
         student.setUser(user);
         student.setTenant(tenant); // Changed from setTenantId
         student.setLevel(request.getLevel());
+        student.setNom(request.getNom());
+        student.setPrenom(request.getPrenom());
         student.setStatus(StudentStatus.active);
 
         return studentRepository.save(student);

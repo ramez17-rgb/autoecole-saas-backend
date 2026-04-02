@@ -1,6 +1,6 @@
 package com.autoecole.saas.payment;
 
-import com.autoecole.saas.student.StudentContract;
+import com.autoecole.saas.student.Student;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
@@ -18,10 +18,10 @@ import java.util.Base64;
 @Service
 public class PdfService {
 
-    public String generateReceiptPdf(Receipt receipt, StudentContract contract, BigDecimal totalPaid,
+    public String generateReceiptPdf(Receipt receipt, Student student, BigDecimal totalPaid,
             byte[] qrCodeImageBytes) {
         try {
-            String directoryPath = "receipts/" + contract.getTenant().getId().toString() + "/";
+            String directoryPath = "receipts/" + student.getTenant().getId().toString() + "/";
             File directory = new File(directoryPath);
             if (!directory.exists()) {
                 directory.mkdirs();
@@ -43,7 +43,7 @@ public class PdfService {
             document.add(title);
 
             // Driving School Info
-            String schoolName = contract.getTenant().getName();
+            String schoolName = student.getTenant().getName();
             Paragraph schoolInfo = new Paragraph("Driving School: " + schoolName);
             schoolInfo.setSpacingAfter(20);
             document.add(schoolInfo);
@@ -57,12 +57,9 @@ public class PdfService {
             addCellToTable(table, "Receipt Number:", receipt.getReceiptNumber());
             addCellToTable(table, "Date:",
                     receipt.getPayment().getPaymentDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            addCellToTable(table, "Student Email:", receipt.getPayment().getStudent().getUser().getEmail());
+            addCellToTable(table, "Student Email:", student.getUser().getEmail());
             addCellToTable(table, "Amount Paid:", receipt.getPayment().getAmount().toString() + " TND");
-            addCellToTable(table, "Total Course Price:", contract.getTotalPrice().toString() + " TND");
-
-            BigDecimal remainingAmount = contract.getTotalPrice().subtract(totalPaid);
-            addCellToTable(table, "Remaining Amount:", remainingAmount.toString() + " TND");
+            addCellToTable(table, "Total Validated Paid So Far:", totalPaid.toString() + " TND");
 
             document.add(table);
 
@@ -75,9 +72,9 @@ public class PdfService {
             }
 
             // Admin Stamp
-            if (contract.getTenant().getStampImage() != null && !contract.getTenant().getStampImage().isEmpty()) {
+            if (student.getTenant().getStampImage() != null && !student.getTenant().getStampImage().isEmpty()) {
                 try {
-                    String base64Image = contract.getTenant().getStampImage().split(",")[1];
+                    String base64Image = student.getTenant().getStampImage().split(",")[1];
                     byte[] stampBytes = Base64.getDecoder().decode(base64Image);
                     Image stampImage = Image.getInstance(stampBytes);
                     stampImage.scaleAbsolute(100, 100);

@@ -1,7 +1,7 @@
 package com.autoecole.saas.payment;
 
 import com.autoecole.saas.student.Student;
-import com.autoecole.saas.student.StudentContract;
+import com.autoecole.saas.student.Student;
 import com.autoecole.saas.tenant.Tenant;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -23,10 +23,6 @@ public class Payment {
     @ManyToOne(optional = false)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "contract_id", nullable = false)
-    private StudentContract contract;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -62,14 +58,6 @@ public class Payment {
 
     public void setStudent(Student student) {
         this.student = student;
-    }
-
-    public StudentContract getContract() {
-        return contract;
-    }
-
-    public void setContract(StudentContract contract) {
-        this.contract = contract;
     }
 
     public BigDecimal getAmount() {

@@ -5,6 +5,8 @@ public class CreateStudentRequest {
     private String email;
     private String password;
     private String level;
+    private String nom;
+    private String prenom;
 
     public String getEmail() {
         return email;
@@ -16,5 +18,13 @@ public class CreateStudentRequest {
 
     public String getLevel() {
         return level;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
     }
 }

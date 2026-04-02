@@ -6,14 +6,11 @@ public class PaymentStatsResponse {
     private BigDecimal totalRevenue;
     private long numberOfPayments;
     private BigDecimal averagePayment;
-    private int studentsFullyPaid;
 
-    public PaymentStatsResponse(BigDecimal totalRevenue, long numberOfPayments, BigDecimal averagePayment,
-            int studentsFullyPaid) {
+    public PaymentStatsResponse(BigDecimal totalRevenue, long numberOfPayments, BigDecimal averagePayment) {
         this.totalRevenue = totalRevenue;
         this.numberOfPayments = numberOfPayments;
         this.averagePayment = averagePayment;
-        this.studentsFullyPaid = studentsFullyPaid;
     }
 
     public BigDecimal getTotalRevenue() {
@@ -38,13 +35,5 @@ public class PaymentStatsResponse {
 
     public void setAveragePayment(BigDecimal averagePayment) {
         this.averagePayment = averagePayment;
-    }
-
-    public int getStudentsFullyPaid() {
-        return studentsFullyPaid;
-    }
-
-    public void setStudentsFullyPaid(int studentsFullyPaid) {
-        this.studentsFullyPaid = studentsFullyPaid;
     }
 }

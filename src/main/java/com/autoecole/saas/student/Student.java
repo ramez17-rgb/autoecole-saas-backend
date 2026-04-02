@@ -16,13 +16,16 @@ public class Student {
     @JoinColumn(name = "main_monitor_id")
     private Monitor mainMonitor;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "tenant_id", nullable = true)
     private Tenant tenant;
 
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    private String nom;
+    private String prenom;
 
     private String level;
 
@@ -66,6 +69,22 @@ public class Student {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
     }
 
     public String getLevel() {

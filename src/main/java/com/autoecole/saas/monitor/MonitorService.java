@@ -63,6 +63,8 @@ public class MonitorService {
         Monitor monitor = new Monitor();
         monitor.setUser(user);
         monitor.setTenant(tenant);
+        monitor.setNom(request.getNom());
+        monitor.setPrenom(request.getPrenom());
 
         return monitorRepository.save(monitor);
     }

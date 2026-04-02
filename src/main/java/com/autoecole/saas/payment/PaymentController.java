@@ -32,9 +32,9 @@ public class PaymentController {
         return paymentService.recordPayment(tenantId, userId, request);
     }
 
-    @GetMapping("/progress/{contractId}")
-    public PaymentProgressResponse getPaymentProgress(@PathVariable UUID contractId) {
-        return paymentService.getPaymentProgress(contractId);
+    @GetMapping("/progress/{studentId}")
+    public PaymentProgressResponse getPaymentProgress(@PathVariable UUID studentId) {
+        return paymentService.getPaymentProgress(studentId);
     }
 
     @GetMapping("/stats")

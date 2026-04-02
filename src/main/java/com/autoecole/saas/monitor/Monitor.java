@@ -21,6 +21,9 @@ public class Monitor {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    private String nom;
+    private String prenom;
+
     public Monitor() {
     }
 
@@ -48,5 +51,21 @@ public class Monitor {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
     }
 }

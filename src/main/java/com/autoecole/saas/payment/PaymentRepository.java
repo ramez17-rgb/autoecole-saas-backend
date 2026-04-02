@@ -11,19 +11,16 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
-    List<Payment> findByContractId(UUID contractId);
+    List<Payment> findByStudentId(UUID studentId);
 
     List<Payment> findByTenantId(UUID tenantId);
 
-    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.contract.id = :contractId")
-    BigDecimal sumAmountByContractId(@Param("contractId") UUID contractId);
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.student.id = :studentId")
+    BigDecimal sumAmountByStudentId(@Param("studentId") UUID studentId);
 
     @Query("SELECT COUNT(p) FROM Payment p WHERE p.tenant.id = :tenantId")
     long countByTenantId(@Param("tenantId") UUID tenantId);
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.tenant.id = :tenantId")
     BigDecimal sumAmountByTenantId(@Param("tenantId") UUID tenantId);
-
-    @Query("SELECT p.contract.id FROM Payment p WHERE p.tenant.id = :tenantId GROUP BY p.contract.id HAVING SUM(p.amount) >= (SELECT c.totalPrice FROM StudentContract c WHERE c.id = p.contract.id)")
-    List<UUID> findContractsFullyPaidByTenantId(@Param("tenantId") UUID tenantId);
 }
