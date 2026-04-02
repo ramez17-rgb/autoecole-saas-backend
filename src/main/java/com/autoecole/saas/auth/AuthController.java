@@ -3,8 +3,10 @@ package com.autoecole.saas.auth;
 import com.autoecole.saas.security.JwtService;
 import com.autoecole.saas.user.User;
 import com.autoecole.saas.user.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -39,18 +41,18 @@ public class AuthController {
     public String login(@RequestBody LoginRequest request) {
 
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (!user.isEnabled()) {
-            throw new RuntimeException("User disabled");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User disabled");
         }
 
         if (user.getTenant() != null && !user.getTenant().isActive()) {
-            throw new RuntimeException("Tenant is not active");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant is not active");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
         return jwtService.generateToken(user);

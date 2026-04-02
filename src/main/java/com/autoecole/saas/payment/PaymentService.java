@@ -145,6 +145,20 @@ public class PaymentService {
                 studentsFullyPaid);
     }
 
+    public List<java.util.Map<String, Object>> getContracts(UUID tenantId) {
+        return contractRepository.findByTenantId(tenantId).stream().map(c -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", c.getId());
+            map.put("totalPrice", c.getTotalPrice());
+            String studentName = "";
+            if (c.getStudent() != null && c.getStudent().getUser() != null) {
+                studentName = c.getStudent().getUser().getEmail();
+            }
+            map.put("studentName", studentName);
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
     private String generateReceiptNumber() {
         int year = Year.now().getValue();
         long count = receiptRepository.count() + 1;
