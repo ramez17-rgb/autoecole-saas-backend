@@ -42,4 +42,10 @@ public class PaymentController {
         UUID tenantId = TenantContext.getTenantId();
         return paymentService.getPaymentStats(tenantId);
     }
+
+    @GetMapping("/contracts")
+    public java.util.List<java.util.Map<String, Object>> getContracts() {
+        UUID tenantId = TenantContext.getTenantId();
+        return paymentService.getContracts(tenantId);
+    }
 }

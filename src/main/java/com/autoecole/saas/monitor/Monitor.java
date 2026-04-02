@@ -2,6 +2,7 @@ package com.autoecole.saas.monitor;
 
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -13,10 +14,12 @@ public class Monitor {
     @GeneratedValue
     private UUID id;
 
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "roles", "tenant"})
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;

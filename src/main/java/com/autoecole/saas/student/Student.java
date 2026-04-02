@@ -2,6 +2,8 @@ package com.autoecole.saas.student;
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -12,20 +14,20 @@ public class Student {
     @Id
     @GeneratedValue
     private UUID id;
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "sessions"})
     @ManyToOne(optional = true)
     @JoinColumn(name = "main_monitor_id")
     private Monitor mainMonitor;
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "tenant_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "roles", "tenant"})
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-
-    private String nom;
-    private String prenom;
 
     private String level;
 
@@ -39,6 +41,7 @@ public class Student {
     public Student() {
     }
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
     private java.util.List<com.autoecole.saas.session.Session> sessions = new java.util.ArrayList<>();
 
@@ -69,22 +72,6 @@ public class Student {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public String getNom() {
-        return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
-
-    public String getPrenom() {
-        return prenom;
-    }
-
-    public void setPrenom(String prenom) {
-        this.prenom = prenom;
     }
 
     public String getLevel() {

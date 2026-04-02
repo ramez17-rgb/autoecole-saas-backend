@@ -1,6 +1,8 @@
 package com.autoecole.saas.user;
 
 import com.autoecole.saas.tenant.Tenant;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,6 +18,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false)
     private String password;
 
@@ -26,6 +29,7 @@ public class User {
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<RoleEntity> roles = new HashSet<>();
 
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ManyToOne
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
@@ -86,8 +90,5 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    {
     }
 }
