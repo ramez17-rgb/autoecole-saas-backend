@@ -83,4 +83,8 @@ public class Payment {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public Object getTotalPrice() {
+        return null;
+    }
 }

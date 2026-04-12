@@ -15,8 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Year;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
@@ -126,9 +129,10 @@ public class PaymentService {
                 averagePayment);
     }
 
-    public List<java.util.Map<String, Object>> getContracts(UUID tenantId) {
+    public List<Map<String, Object>> getContracts(UUID tenantId) {
+        PaymentRepository contractRepository = null;
         return contractRepository.findByTenantId(tenantId).stream().map(c -> {
-            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
             map.put("totalPrice", c.getTotalPrice());
             String studentName = "";
@@ -137,7 +141,7 @@ public class PaymentService {
             }
             map.put("studentName", studentName);
             return map;
-        }).collect(java.util.stream.Collectors.toList());
+        }).collect(Collectors.toList());
     }
 
     private String generateReceiptNumber() {

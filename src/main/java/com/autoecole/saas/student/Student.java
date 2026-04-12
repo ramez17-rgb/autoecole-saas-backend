@@ -1,10 +1,14 @@
 package com.autoecole.saas.student;
+
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -14,6 +18,14 @@ public class Student {
     @Id
     @GeneratedValue
     private UUID id;
+
+    // ✅ NEW FIELDS (FIX)
+    @Column(name = "nom")
+    private String nom;
+
+    @Column(name = "prenom")
+    private String prenom;
+
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "sessions"})
     @ManyToOne(optional = true)
     @JoinColumn(name = "main_monitor_id")
@@ -43,19 +55,29 @@ public class Student {
 
     @JsonIgnore
     @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
-    private java.util.List<com.autoecole.saas.session.Session> sessions = new java.util.ArrayList<>();
-
-    public java.util.List<com.autoecole.saas.session.Session> getSessions() {
-        return sessions;
-    }
-
-    public void setSessions(java.util.List<com.autoecole.saas.session.Session> sessions) {
-        this.sessions = sessions;
-    }
+    private List<com.autoecole.saas.session.Session> sessions = new ArrayList<>();
 
     // ===== Getters & Setters =====
+
     public UUID getId() {
         return id;
+    }
+
+    // ✅ NEW GETTERS
+    public String getNom() {
+        return nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
     }
 
     public Tenant getTenant() {
@@ -104,5 +126,13 @@ public class Student {
 
     public void setMainMonitor(Monitor mainMonitor) {
         this.mainMonitor = mainMonitor;
+    }
+
+    public List<com.autoecole.saas.session.Session> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(List<com.autoecole.saas.session.Session> sessions) {
+        this.sessions = sessions;
     }
 }

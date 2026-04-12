@@ -31,7 +31,8 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
     tenant_id UUID,
-
+    nom VARCHAR(255) ,
+    prenom VARCHAR(255) ,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
 
@@ -104,6 +105,7 @@ CREATE TABLE students (
     main_monitor_id UUID,
     level VARCHAR(50),
     hours_completed INT DEFAULT 0,
+    telephone Int,
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','archived'))
         DEFAULT 'active',
