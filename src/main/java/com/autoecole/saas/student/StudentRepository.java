@@ -1,5 +1,6 @@
 package com.autoecole.saas.student;
 
+import com.autoecole.saas.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
@@ -11,4 +12,6 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Optional<Student> findByIdAndTenantId(UUID id, UUID tenantId);
 
     Optional<Student> findByUserId(UUID userId);
+
+    Optional<Student> findByUser(User user);
 }

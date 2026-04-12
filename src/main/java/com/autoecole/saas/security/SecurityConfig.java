@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "TENANT_ADMIN")
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/join-requests/schools").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

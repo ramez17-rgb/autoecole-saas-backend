@@ -23,5 +23,14 @@ public class DatabaseFixer implements CommandLineRunner {
             System.out.println("Database fix (users.tenant_id) failed: " + e.getMessage());
         }
 
+        try {
+            System.out.println("Applying database fix: Dropping NOT NULL constraint on students.tenant_id");
+            jdbcTemplate.execute("ALTER TABLE students ALTER COLUMN tenant_id DROP NOT NULL");
+            System.out.println("Database fix (students.tenant_id) applied successfully.");
+        } catch (Exception e) {
+            System.out.println("Database fix (students.tenant_id) failed: " + e.getMessage());
+        }
     }
-}
+
+    }
+
