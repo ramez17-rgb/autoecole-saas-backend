@@ -14,6 +14,8 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+    @Column(name = "telephone")
+    private Integer telephone;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -35,6 +37,13 @@ public class User {
     private Tenant tenant;
 
     // getters sets
+    public Integer getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(Integer telephone) {
+        this.telephone = telephone;
+    }
 
     public UUID getId() {
         return id;

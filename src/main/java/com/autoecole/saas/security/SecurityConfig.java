@@ -40,10 +40,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/tenants/register").permitAll()
                         .requestMatchers("/api/dev/**").permitAll() // Allow dev helpers
                         .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "TENANT_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "TENANT_ADMIN" )
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/join-requests/schools").permitAll()
+                        .requestMatchers("/api/public/schools").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

@@ -33,6 +33,8 @@ CREATE TABLE users (
     tenant_id UUID,
     nom VARCHAR(255) ,
     prenom VARCHAR(255) ,
+    telephone Int,
+
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
 

@@ -70,6 +70,7 @@ public class StudentService {
         student.setLevel(request.getLevel());
         student.setNom(request.getNom());
         student.setPrenom(request.getPrenom());
+        student.setTelephone(request.getTelephone());
         student.setStatus(StudentStatus.active);
 
         return studentRepository.save(student);

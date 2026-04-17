@@ -26,6 +26,9 @@ public class Student {
     @Column(name = "prenom")
     private String prenom;
 
+    @Column(name = "telephone")
+    private Integer telephone;
+
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "sessions"})
     @ManyToOne(optional = true)
     @JoinColumn(name = "main_monitor_id")
@@ -134,5 +137,12 @@ public class Student {
 
     public void setSessions(List<com.autoecole.saas.session.Session> sessions) {
         this.sessions = sessions;
+    }
+    public Integer getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(Integer telephone) {
+        this.telephone = telephone;
     }
 }

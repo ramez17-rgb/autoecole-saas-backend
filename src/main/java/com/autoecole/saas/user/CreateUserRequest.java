@@ -5,6 +5,8 @@ public class CreateUserRequest {
     private String email;
     private String password;
     private Role role;
+    private String telephone;
+
 
     public String getEmail() {
         return email;
@@ -28,5 +30,13 @@ public class CreateUserRequest {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 }
