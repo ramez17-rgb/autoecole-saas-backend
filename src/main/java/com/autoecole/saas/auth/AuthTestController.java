@@ -82,7 +82,6 @@ public class AuthTestController {
 
         return "User created: admin@test.com / password";
     }
-
     @org.springframework.web.bind.annotation.PostMapping("/api/auth/seed-monitor")
     public String createMonitorUser() {
         if (userRepository.findByEmail("monitor@test.com").isPresent()) {

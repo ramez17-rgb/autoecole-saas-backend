@@ -28,6 +28,7 @@ public class UserService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setTelephone(Integer.valueOf(request.getTelephone()));
 
         RoleEntity roleEntity = roleRepository.findByName(request.getRole().name())
                 .orElseGet(() -> roleRepository.save(new RoleEntity(request.getRole().name())));

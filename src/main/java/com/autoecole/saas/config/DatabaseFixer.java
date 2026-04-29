@@ -24,12 +24,11 @@ public class DatabaseFixer implements CommandLineRunner {
         }
 
         try {
-            System.out.println(
-                    "Applying database fix: Dropping conflicting expires_at column from password_setup_tokens");
-            jdbcTemplate.execute("ALTER TABLE password_setup_tokens DROP COLUMN IF EXISTS expires_at");
-            System.out.println("Database fix (password_setup_tokens.expires_at) applied successfully.");
+            System.out.println("Applying database fix: Dropping NOT NULL constraint on students.tenant_id");
+            jdbcTemplate.execute("ALTER TABLE students ALTER COLUMN tenant_id DROP NOT NULL");
+            System.out.println("Database fix (students.tenant_id) applied successfully.");
         } catch (Exception e) {
-            System.out.println("Database fix (password_setup_tokens.expires_at) failed: " + e.getMessage());
+            System.out.println("Database fix (students.tenant_id) failed: " + e.getMessage());
         }
 
         // Fix telephone column type: Hibernate ddl-auto=update does NOT change existing column types.
@@ -77,4 +76,6 @@ public class DatabaseFixer implements CommandLineRunner {
             System.out.println("Database fix (monitors.telephone type) skipped or failed: " + e.getMessage());
         }
     }
-}
+
+    }
+

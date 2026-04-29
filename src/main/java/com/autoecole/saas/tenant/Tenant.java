@@ -29,6 +29,9 @@ public class Tenant {
     @Column(name = "contact_email")
     private String contactEmail;
 
+    @Column(name = "stamp_image", columnDefinition = "TEXT")
+    private String stampImage;
+
     public Tenant() {
     }
 
@@ -94,5 +97,13 @@ public class Tenant {
 
     public boolean isActive() {
         return "ACTIVE".equalsIgnoreCase(status);
+    }
+
+    public String getStampImage() {
+        return stampImage;
+    }
+
+    public void setStampImage(String stampImage) {
+        this.stampImage = stampImage;
     }
 }
