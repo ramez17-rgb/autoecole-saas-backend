@@ -82,4 +82,23 @@ public class SessionResponse {
     public void setNotes(String notes) {
         this.notes = notes;
     }
+
+    private String monitorName;
+    private List<String> studentNames;
+
+    public String getMonitorName() {
+        return monitorName;
+    }
+
+    public void setMonitorName(String monitorName) {
+        this.monitorName = monitorName;
+    }
+
+    public List<String> getStudentNames() {
+        return studentNames;
+    }
+
+    public void setStudentNames(List<String> studentNames) {
+        this.studentNames = studentNames;
+    }
 }

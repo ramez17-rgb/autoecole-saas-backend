@@ -34,6 +34,9 @@ CREATE TABLE users (
 
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
+    prenom VARCHAR(100),
+    nom VARCHAR(100),
+    telephone VARCHAR(20),
 
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','disabled'))
@@ -102,6 +105,7 @@ CREATE TABLE students (
     main_monitor_id UUID,
     level VARCHAR(50),
     hours_completed INT DEFAULT 0,
+    telephone VARCHAR(20),
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','archived'))
         DEFAULT 'active',
@@ -127,6 +131,7 @@ CREATE TABLE monitors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     user_id UUID NOT NULL UNIQUE,
+    telephone VARCHAR(20),
 
     CONSTRAINT fk_monitor_user
         FOREIGN KEY (user_id)
@@ -301,14 +306,16 @@ CREATE INDEX idx_audit_tenant ON audit_logs(tenant_id);
 
 
 -- =====================================================
--- MOCK TESTS & QUESTIONS (Sprint 4)
+-- MOCK TESTS & QUESTIONS (Sprint 4 – Refactored)
 -- =====================================================
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     category VARCHAR(100) NOT NULL,
     question_text TEXT NOT NULL,
-    correct_answer VARCHAR(255) NOT NULL,
+    explanation TEXT,
+    image_url TEXT,
+    difficulty VARCHAR(10) CHECK (difficulty IN ('easy', 'medium', 'hard')) DEFAULT 'medium',
     created_at TIMESTAMP DEFAULT now(),
     CONSTRAINT fk_questions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
@@ -317,6 +324,7 @@ CREATE TABLE question_options (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     question_id UUID NOT NULL,
     option_text VARCHAR(255) NOT NULL,
+    is_correct BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_qo_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
@@ -336,12 +344,15 @@ CREATE TABLE mock_test_answers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     mock_test_id UUID NOT NULL,
     question_id UUID NOT NULL,
-    selected_answer VARCHAR(255),
+    selected_option_id UUID NOT NULL,
     is_correct BOOLEAN,
     CONSTRAINT fk_mta_mock_test FOREIGN KEY (mock_test_id) REFERENCES mock_tests(id) ON DELETE CASCADE,
-    CONSTRAINT fk_mta_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    CONSTRAINT fk_mta_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mta_selected_option FOREIGN KEY (selected_option_id) REFERENCES question_options(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_questions_tenant ON questions(tenant_id);
+CREATE INDEX idx_question_options_question ON question_options(question_id);
 CREATE INDEX idx_mock_tests_tenant ON mock_tests(tenant_id);
 CREATE INDEX idx_mock_tests_student ON mock_tests(student_id);
+CREATE INDEX idx_mock_test_answers_mock_test ON mock_test_answers(mock_test_id);

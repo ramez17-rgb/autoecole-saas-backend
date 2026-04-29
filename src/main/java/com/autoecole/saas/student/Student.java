@@ -2,6 +2,7 @@ package com.autoecole.saas.student;
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -14,14 +15,17 @@ public class Student {
     private UUID id;
     @ManyToOne(optional = true)
     @JoinColumn(name = "main_monitor_id")
+    @JsonIgnoreProperties({"students", "tenant"})
     private Monitor mainMonitor;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonIgnoreProperties({"students", "users"})
     private Tenant tenant;
 
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"password", "roles", "tenant"})
     private User user;
 
     private String level;
@@ -32,11 +36,15 @@ public class Student {
     @Enumerated(EnumType.STRING)
     private StudentStatus status = StudentStatus.active;
 
+    @Column(name = "telephone", length = 20)
+    private String telephone;
+
     // ===== Constructors =====
     public Student() {
     }
 
     @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<com.autoecole.saas.session.Session> sessions = new java.util.ArrayList<>();
 
     public java.util.List<com.autoecole.saas.session.Session> getSessions() {
@@ -98,5 +106,31 @@ public class Student {
 
     public void setMainMonitor(Monitor mainMonitor) {
         this.mainMonitor = mainMonitor;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("prenom")
+    public String getFirstName() {
+        return user != null ? user.getFirstName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("nom")
+    public String getLastName() {
+        return user != null ? user.getLastName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("email")
+    public String getEmail() {
+        return user != null ? user.getEmail() : null;
     }
 }

@@ -58,10 +58,10 @@ public class SuperAdminService {
         // 3. Generate Secure Token
         String token = UUID.randomUUID().toString();
         System.out.println("GENERATED TOKEN: " + token); // For verification purposes
-        PasswordSetupToken setupToken = new PasswordSetupToken(
-                token,
-                admin,
-                LocalDateTime.now().plusHours(24));
+        PasswordSetupToken setupToken = new PasswordSetupToken();
+        setupToken.setToken(token);
+        setupToken.setUser(admin);
+        setupToken.setExpiresAt(LocalDateTime.now().plusHours(24));
         tokenRepository.save(setupToken);
 
         // 4. Send Email

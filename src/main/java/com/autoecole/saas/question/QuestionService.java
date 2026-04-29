@@ -1,5 +1,6 @@
 package com.autoecole.saas.question;
 
+import com.autoecole.saas.question.dto.CreateQuestionOptionRequest;
 import com.autoecole.saas.question.dto.CreateQuestionRequest;
 import com.autoecole.saas.question.dto.QuestionOptionDto;
 import com.autoecole.saas.question.dto.QuestionResponse;
@@ -32,15 +33,29 @@ public class QuestionService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
 
+        // Validate that exactly one option is marked correct
+        long correctCount = request.getOptions().stream()
+                .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                .count();
+        if (correctCount == 0) {
+            throw new RuntimeException("At least one option must be marked as correct");
+        }
+        if (correctCount > 1) {
+            throw new RuntimeException("Only one option can be marked as correct");
+        }
+
         Question question = new Question();
         question.setTenant(tenant);
         question.setCategory(request.getCategory());
         question.setQuestionText(request.getQuestionText());
-        question.setCorrectAnswer(request.getCorrectAnswer());
+        question.setExplanation(request.getExplanation());
+        question.setImageUrl(request.getImageUrl());
+        question.setDifficulty(request.getDifficulty() != null ? request.getDifficulty() : "medium");
 
-        for (String optionText : request.getOptions()) {
+        for (CreateQuestionOptionRequest optReq : request.getOptions()) {
             QuestionOption option = new QuestionOption();
-            option.setOptionText(optionText);
+            option.setOptionText(optReq.getOptionText());
+            option.setIsCorrect(optReq.getIsCorrect());
             question.addOption(option);
         }
 
@@ -73,9 +88,12 @@ public class QuestionService {
         response.setId(question.getId());
         response.setCategory(question.getCategory());
         response.setQuestionText(question.getQuestionText());
+        response.setExplanation(question.getExplanation());
+        response.setImageUrl(question.getImageUrl());
+        response.setDifficulty(question.getDifficulty());
 
         List<QuestionOptionDto> optionDtos = question.getOptions().stream()
-                .map(opt -> new QuestionOptionDto(opt.getId(), opt.getOptionText()))
+                .map(opt -> new QuestionOptionDto(opt.getId(), opt.getOptionText(), opt.getIsCorrect()))
                 .collect(Collectors.toList());
 
         response.setOptions(optionDtos);

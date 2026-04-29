@@ -50,7 +50,10 @@ public class StudentService {
 
         // 1️⃣ Create USER automatically
         User user = new User();
+        user.setFirstName(request.getPrenom());
+        user.setLastName(request.getNom());
         user.setEmail(request.getEmail());
+        user.setTelephone(request.getTelephone());
         user.setPassword(passwordEncoder.encode(request.getPassword())); // Changed from setPasswordHash
 
         // Handle Role
@@ -62,6 +65,7 @@ public class StudentService {
         user.setStatus("active");
 
         userRepository.save(user);
+        System.out.println("StudentService.createStudent: saved user firstName=" + user.getFirstName() + ", lastName=" + user.getLastName() + ", email=" + user.getEmail());
 
         // 2️⃣ Create STUDENT linked to user
         Student student = new Student();
@@ -69,6 +73,7 @@ public class StudentService {
         student.setTenant(tenant); // Changed from setTenantId
         student.setLevel(request.getLevel());
         student.setStatus(StudentStatus.active);
+        student.setTelephone(request.getTelephone());
 
         return studentRepository.save(student);
     }
@@ -108,6 +113,49 @@ public class StudentService {
         return studentRepository.findById(id)
                 .filter(s -> s.getTenant().getId().equals(TenantContext.getTenantId()))
                 .orElseThrow(() -> new RuntimeException("Student not found"));
+    }
+
+    @Transactional
+    public Student registerPublicStudent(String firstName, String lastName, String email, String password, String level, String telephone) {
+        // For public registration, we need to associate with a tenant
+        // For now, use the first active tenant (this should be improved to allow tenant selection)
+        Tenant tenant = tenantRepository.findAll().stream()
+                .filter(Tenant::isActive)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active tenant available for registration"));
+
+        // Check if email is already taken
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("Email is already taken: " + email);
+        }
+
+        // 1️⃣ Create USER automatically
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setTelephone(telephone);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setTenant(tenant);
+        user.setStatus("active");
+
+        // Handle Role
+        RoleEntity role = roleRepository.findByName("STUDENT")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("STUDENT")));
+        user.getRoles().add(role);
+
+        userRepository.save(user);
+        System.out.println("StudentService.registerPublicStudent: saved user firstName=" + user.getFirstName() + ", lastName=" + user.getLastName() + ", email=" + user.getEmail());
+
+        // 2️⃣ Create STUDENT linked to user
+        Student student = new Student();
+        student.setUser(user);
+        student.setTenant(tenant);
+        student.setLevel(level);
+        student.setStatus(StudentStatus.active);
+        student.setTelephone(telephone);
+
+        return studentRepository.save(student);
     }
 
     public void archiveStudent(UUID id) {

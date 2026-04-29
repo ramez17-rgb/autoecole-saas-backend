@@ -46,7 +46,10 @@ public class MonitorService {
 
         // 1️⃣ Create USER
         User user = new User();
+        user.setFirstName(request.getPrenom());
+        user.setLastName(request.getNom());
         user.setEmail(request.getEmail());
+        user.setTelephone(request.getTelephone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // Handle Role
@@ -63,6 +66,47 @@ public class MonitorService {
         Monitor monitor = new Monitor();
         monitor.setUser(user);
         monitor.setTenant(tenant);
+        monitor.setTelephone(request.getTelephone());
+
+        return monitorRepository.save(monitor);
+    }
+
+    @Transactional
+    public Monitor registerPublicMonitor(String firstName, String lastName, String email, String password,
+            String telephone) {
+        // Find first active tenant since no tenant context is provided
+        Tenant tenant = tenantRepository.findAll().stream()
+                .filter(Tenant::isActive)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active tenant available for registration"));
+
+        // Check if email is already taken
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("Email is already taken: " + email);
+        }
+
+        // 1️⃣ Create USER
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setTelephone(telephone);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setTenant(tenant);
+        user.setStatus("active");
+
+        // Handle Role
+        RoleEntity role = roleRepository.findByName("MONITOR")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("MONITOR")));
+        user.getRoles().add(role);
+
+        userRepository.save(user);
+
+        // 2️⃣ Create MONITOR
+        Monitor monitor = new Monitor();
+        monitor.setUser(user);
+        monitor.setTenant(tenant);
+        monitor.setTelephone(telephone);
 
         return monitorRepository.save(monitor);
     }

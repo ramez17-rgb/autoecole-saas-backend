@@ -168,13 +168,10 @@ public class SessionService {
     }
 
     public List<SessionResponse> getStudentSessions(UUID studentId) {
-        UUID tenantId = getTenantId();
-        Student student = studentRepository.findById(studentId)
+        // Student is authenticated — look up their sessions directly by studentId.
+        // No tenant check needed: studentId comes from their own authenticated profile.
+        studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
-
-        if (!student.getTenant().getId().equals(tenantId)) {
-            throw new RuntimeException("Unauthorized access to student's sessions");
-        }
 
         return sessionRepository.findByStudents_IdOrderBySessionDateDescStartTimeDesc(studentId)
                 .stream()
@@ -220,7 +217,18 @@ public class SessionService {
         SessionResponse response = new SessionResponse();
         response.setId(session.getId());
         response.setMonitorId(session.getMonitor().getId());
+        
+        String mFirstName = session.getMonitor().getUser() != null ? session.getMonitor().getUser().getFirstName() : session.getMonitor().getFirstName();
+        String mLastName = session.getMonitor().getUser() != null ? session.getMonitor().getUser().getLastName() : session.getMonitor().getLastName();
+        response.setMonitorName(((mFirstName != null ? mFirstName : "") + " " + (mLastName != null ? mLastName : "")).trim());
+        
         response.setStudentIds(session.getStudents().stream().map(Student::getId).collect(Collectors.toList()));
+        response.setStudentNames(session.getStudents().stream().map(s -> {
+            String sFirstName = s.getUser() != null ? s.getUser().getFirstName() : s.getFirstName();
+            String sLastName = s.getUser() != null ? s.getUser().getLastName() : s.getLastName();
+            return ((sFirstName != null ? sFirstName : "") + " " + (sLastName != null ? sLastName : "")).trim();
+        }).collect(Collectors.toList()));
+        
         response.setSessionDate(session.getSessionDate());
         response.setStartTime(session.getStartTime());
         response.setEndTime(session.getEndTime());

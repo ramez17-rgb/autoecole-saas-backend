@@ -43,3 +43,23 @@ public class StudentController {
         return studentService.assignMainMonitor(studentId, monitorId);
     }
 }
+
+// Public student registration endpoint
+@RestController
+@RequestMapping("/api/students")
+class PublicStudentController {
+
+    private final StudentService studentService;
+
+    public PublicStudentController(StudentService studentService) {
+        this.studentService = studentService;
+    }
+
+    @PostMapping("/register")
+    public Student register(@RequestBody PublicStudentRegistrationRequest request) {
+        return studentService.registerPublicStudent(request.firstName(), request.lastName(), request.email(), request.password(), request.level(), request.telephone());
+    }
+
+    public record PublicStudentRegistrationRequest(String firstName, String lastName, String email, String password, String level, String telephone) {}
+}
+

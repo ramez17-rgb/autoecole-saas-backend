@@ -21,6 +21,9 @@ public class Monitor {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Column(name = "telephone", length = 20)
+    private String telephone;
+
     public Monitor() {
     }
 
@@ -48,5 +51,31 @@ public class Monitor {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("firstName")
+    public String getFirstName() {
+        return user != null ? user.getFirstName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("lastName")
+    public String getLastName() {
+        return user != null ? user.getLastName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("email")
+    public String getEmail() {
+        return user != null ? user.getEmail() : null;
     }
 }

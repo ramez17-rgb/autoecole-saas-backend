@@ -21,10 +21,12 @@ public class Session {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"sessions", "students", "monitors", "users"})
     private Tenant tenant;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "monitor_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"sessions", "tenant"})
     private Monitor monitor;
 
     @Column(name = "session_date", nullable = false)
@@ -48,6 +50,7 @@ public class Session {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "session_students", joinColumns = @JoinColumn(name = "session_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"sessions", "tenant", "mainMonitor"})
     private List<Student> students = new ArrayList<>();
 
     public Session() {

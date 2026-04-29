@@ -1,6 +1,7 @@
 package com.autoecole.saas.mock;
 
 import com.autoecole.saas.question.Question;
+import com.autoecole.saas.question.QuestionOption;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -20,8 +21,9 @@ public class MockTestAnswer {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(name = "selected_answer")
-    private String selectedAnswer;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "selected_option_id", nullable = false)
+    private QuestionOption selectedOption;
 
     @Column(name = "is_correct")
     private Boolean isCorrect;
@@ -53,12 +55,12 @@ public class MockTestAnswer {
         this.question = question;
     }
 
-    public String getSelectedAnswer() {
-        return selectedAnswer;
+    public QuestionOption getSelectedOption() {
+        return selectedOption;
     }
 
-    public void setSelectedAnswer(String selectedAnswer) {
-        this.selectedAnswer = selectedAnswer;
+    public void setSelectedOption(QuestionOption selectedOption) {
+        this.selectedOption = selectedOption;
     }
 
     public Boolean getIsCorrect() {

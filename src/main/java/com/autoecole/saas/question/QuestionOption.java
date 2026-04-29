@@ -18,6 +18,9 @@ public class QuestionOption {
     @Column(name = "option_text", nullable = false)
     private String optionText;
 
+    @Column(name = "is_correct", nullable = false)
+    private Boolean isCorrect = false;
+
     public QuestionOption() {
     }
 
@@ -43,5 +46,13 @@ public class QuestionOption {
 
     public void setOptionText(String optionText) {
         this.optionText = optionText;
+    }
+
+    public Boolean getIsCorrect() {
+        return isCorrect;
+    }
+
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
     }
 }
