@@ -23,18 +23,21 @@ public class MonitorService {
     private final TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public MonitorService(
             UserRepository userRepository,
             MonitorRepository monitorRepository,
             TenantRepository tenantRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.monitorRepository = monitorRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -68,7 +71,11 @@ public class MonitorService {
         monitor.setTenant(tenant);
         monitor.setTelephone(request.getTelephone());
 
-        return monitorRepository.save(monitor);
+        Monitor savedMonitor = monitorRepository.save(monitor);
+        String monitorName = user.getFirstName() + " " + user.getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, user.getId(), "Moniteur créé : " + monitorName));
+        
+        return savedMonitor;
     }
 
     @Transactional

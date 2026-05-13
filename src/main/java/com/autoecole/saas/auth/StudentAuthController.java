@@ -45,22 +45,22 @@ public class StudentAuthController {
         User user = new User();
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
-        
+        user.setLastName(request.nom());
+        user.setFirstName(request.prenom());
+
         RoleEntity role = roleRepository.findByName("ELEVE")
                 .orElseGet(() -> roleRepository.save(new RoleEntity("ELEVE")));
         user.getRoles().add(role);
-        
+
         user.setStatus("active");
         // No tenant assigned for independent student
-        user.setTenant(null); 
+        user.setTenant(null);
         userRepository.save(user);
 
         Student student = new Student();
         student.setUser(user);
         student.setTenant(null); // No tenant yet
         student.setLevel("DEBUTANT");
-        student.setNom(request.nom());
-        student.setPrenom(request.prenom());
         student.setStatus(StudentStatus.active);
         studentRepository.save(student);
 

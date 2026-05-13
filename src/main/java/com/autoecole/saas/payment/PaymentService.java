@@ -22,11 +22,14 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
     private final TenantRepository tenantRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    public PaymentService(PaymentRepository paymentRepository, StudentRepository studentRepository, TenantRepository tenantRepository) {
+    public PaymentService(PaymentRepository paymentRepository, StudentRepository studentRepository,
+            TenantRepository tenantRepository, org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<Payment> getAllPayments() {
@@ -76,6 +79,13 @@ public class PaymentService {
         payment.setPaymentDate(LocalDate.now());
         payment.setMode(mode != null ? mode : "cash");
 
-        return paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
+        String studentName = student.getUser() != null
+                ? student.getUser().getFirstName() + " " + student.getUser().getLastName()
+                : "Élève inconnu";
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null,
+                "Paiement de " + amount + " DZD reçu de " + studentName));
+
+        return savedPayment;
     }
 }

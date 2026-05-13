@@ -1,5 +1,6 @@
 package com.autoecole.saas.service;
 
+import com.autoecole.saas.email.EmailService;
 import com.autoecole.saas.security.PasswordSetupToken;
 import com.autoecole.saas.security.PasswordSetupTokenRepository;
 import com.autoecole.saas.tenant.Tenant;

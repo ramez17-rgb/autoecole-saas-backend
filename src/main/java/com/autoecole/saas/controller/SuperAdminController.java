@@ -5,8 +5,6 @@ import com.autoecole.saas.student.Student;
 import com.autoecole.saas.student.StudentRepository;
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.monitor.MonitorRepository;
-import com.autoecole.saas.tenant.Tenant;
-import com.autoecole.saas.tenant.TenantRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,25 +16,20 @@ import java.util.UUID;
 public class SuperAdminController {
 
     private final SuperAdminService superAdminService;
-    private final TenantRepository tenantRepository;
-    private final StudentRepository studentRepository;
+    private final com.autoecole.saas.student.StudentService studentService;
     private final MonitorRepository monitorRepository;
 
-    public SuperAdminController(SuperAdminService superAdminService, TenantRepository tenantRepository, StudentRepository studentRepository, MonitorRepository monitorRepository) {
+    public SuperAdminController(SuperAdminService superAdminService,
+                                com.autoecole.saas.student.StudentService studentService,
+                                MonitorRepository monitorRepository) {
         this.superAdminService = superAdminService;
-        this.tenantRepository = tenantRepository;
-        this.studentRepository = studentRepository;
+        this.studentService = studentService;
         this.monitorRepository = monitorRepository;
-    }
-
-    @GetMapping("/tenants")
-    public List<Tenant> getAllTenants() {
-        return tenantRepository.findAll();
     }
 
     @GetMapping("/students")
     public List<Student> getAllStudents() {
-        return studentRepository.findAll();
+        return studentService.getAllStudentsGlobal();
     }
 
     @GetMapping("/monitors")

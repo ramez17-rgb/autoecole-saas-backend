@@ -18,8 +18,8 @@ public class Student {
     @JsonIgnoreProperties({"students", "tenant"})
     private Monitor mainMonitor;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "tenant_id", nullable = true)
     @JsonIgnoreProperties({"students", "users"})
     private Tenant tenant;
 
@@ -132,5 +132,11 @@ public class Student {
     @com.fasterxml.jackson.annotation.JsonProperty("email")
     public String getEmail() {
         return user != null ? user.getEmail() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("schoolName")
+    public String getSchoolName() {
+        return tenant != null ? tenant.getName() : null;
     }
 }

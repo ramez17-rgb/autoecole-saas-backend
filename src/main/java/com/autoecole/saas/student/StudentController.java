@@ -44,6 +44,7 @@ public class StudentController {
     }
 }
 
+
 // Public student registration endpoint
 @RestController
 @RequestMapping("/api/students")
@@ -62,4 +63,3 @@ class PublicStudentController {
 
     public record PublicStudentRegistrationRequest(String firstName, String lastName, String email, String password, String level, String telephone) {}
 }
-

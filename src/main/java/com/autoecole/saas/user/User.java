@@ -35,6 +35,9 @@ public class User {
     @Column(name = "status", nullable = false)
     private String status = "active";
 
+    @Column(name = "must_change_password", nullable = false, columnDefinition = "boolean NOT NULL DEFAULT false")
+    private boolean mustChangePassword = false;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<RoleEntity> roles = new HashSet<>();
@@ -123,6 +126,14 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 
     {

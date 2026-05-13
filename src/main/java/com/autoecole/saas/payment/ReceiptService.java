@@ -30,7 +30,9 @@ public class ReceiptService {
                 receipt.getPayment().getStudent().getUser().getEmail(),
                 receipt.getPayment().getTenant().getName(),
                 receipt.getPayment().getAmount(),
-                receipt.getPayment().getPaymentDate(),
+                receipt.getPayment().getPaymentDate() != null
+                        ? receipt.getPayment().getPaymentDate().atStartOfDay()
+                        : null,
                 isAuthentic);
     }
 

@@ -25,6 +25,7 @@ public class StudentService {
     private final TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public StudentService(
             MonitorRepository monitorRepository,
@@ -32,13 +33,15 @@ public class StudentService {
             StudentRepository studentRepository,
             TenantRepository tenantRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.monitorRepository = monitorRepository;
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -67,18 +70,17 @@ public class StudentService {
         userRepository.save(user);
         System.out.println("StudentService.createStudent: saved user firstName=" + user.getFirstName() + ", lastName=" + user.getLastName() + ", email=" + user.getEmail());
 
-        // 2️⃣ Create STUDENT linked to user
         Student student = new Student();
         student.setUser(user);
         student.setTenant(tenant); // Changed from setTenantId
         student.setLevel(request.getLevel());
-        student.setNom(request.getNom());
-        student.setPrenom(request.getPrenom());
         student.setTelephone(request.getTelephone());
         student.setStatus(StudentStatus.active);
-        student.setTelephone(request.getTelephone());
 
-        return studentRepository.save(student);
+        Student savedStudent = studentRepository.save(student);
+        String studentName = user.getFirstName() + " " + user.getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, user.getId(), "Élève créé : " + studentName));
+        return savedStudent;
     }
 
     @Transactional
@@ -90,7 +92,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Student with ID " + studentId
                         + " not found. Make sure you are using the Student ID, not the User ID."));
 
-        if (!student.getTenant().getId().equals(tenantId)) {
+        if (student.getTenant() != null && !student.getTenant().getId().equals(tenantId)) {
             throw new RuntimeException(
                     "Student exists but belongs to a different tenant. Cross-tenant access forbidden.");
         }
@@ -105,16 +107,28 @@ public class StudentService {
         }
 
         student.setMainMonitor(monitor);
-        return studentRepository.save(student);
+        Student savedStudent = studentRepository.save(student);
+        
+        String monitorName = monitor.getUser().getFirstName() + " " + monitor.getUser().getLastName();
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null, "Moniteur " + monitorName + " assigné à l'élève : " + studentName));
+        return savedStudent;
     }
 
     public List<Student> getAllStudents() {
-        return studentRepository.findByTenantId(TenantContext.getTenantId());
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return studentRepository.findAll();
+        return studentRepository.findByTenantId(tenantId);
+    }
+
+    public List<Student> getAllStudentsGlobal() {
+        return studentRepository.findAll();
     }
 
     public Student getStudent(UUID id) {
+        UUID tenantId = TenantContext.getTenantId();
         return studentRepository.findById(id)
-                .filter(s -> s.getTenant().getId().equals(TenantContext.getTenantId()))
+                .filter(s -> tenantId == null || (s.getTenant() != null && s.getTenant().getId().equals(tenantId)))
                 .orElseThrow(() -> new RuntimeException("Student not found"));
     }
 

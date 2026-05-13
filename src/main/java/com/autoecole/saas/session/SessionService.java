@@ -26,15 +26,18 @@ public class SessionService {
     private final MonitorRepository monitorRepository;
     private final StudentRepository studentRepository;
     private final TenantRepository tenantRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public SessionService(SessionRepository sessionRepository,
             MonitorRepository monitorRepository,
             StudentRepository studentRepository,
-            TenantRepository tenantRepository) {
+            TenantRepository tenantRepository,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.sessionRepository = sessionRepository;
         this.monitorRepository = monitorRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -86,6 +89,8 @@ public class SessionService {
         // Status defaults to PLANNED
 
         Session savedSession = sessionRepository.save(session);
+        String monitorName = monitor.getUser() != null ? monitor.getUser().getFirstName() + " " + monitor.getUser().getLastName() : "Moniteur";
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null, "Session planifiée le " + request.getSessionDate() + " avec " + monitorName));
         return mapToResponse(savedSession);
     }
 

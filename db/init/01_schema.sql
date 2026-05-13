@@ -42,6 +42,8 @@ CREATE TABLE users (
         CHECK (status IN ('active','disabled'))
         DEFAULT 'disabled',
 
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
+
     created_at TIMESTAMP DEFAULT now(),
 
     CONSTRAINT fk_user_tenant
@@ -356,3 +358,50 @@ CREATE INDEX idx_question_options_question ON question_options(question_id);
 CREATE INDEX idx_mock_tests_tenant ON mock_tests(tenant_id);
 CREATE INDEX idx_mock_tests_student ON mock_tests(student_id);
 CREATE INDEX idx_mock_test_answers_mock_test ON mock_test_answers(mock_test_id);
+
+-- =====================================================
+-- SCHOOL JOIN REQUESTS (Student → School assignment)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS school_join_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID NOT NULL,
+    tenant_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('PENDING','APPROVED','REJECTED'))
+        DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT now(),
+    reviewed_at TIMESTAMP,
+    rejection_reason TEXT,
+
+    CONSTRAINT fk_sjr_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_sjr_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sjr_student ON school_join_requests(student_id);
+CREATE INDEX IF NOT EXISTS idx_sjr_tenant ON school_join_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sjr_status ON school_join_requests(status);
+
+-- Make students.tenant_id nullable (for independent student flow)
+ALTER TABLE students ALTER COLUMN tenant_id DROP NOT NULL;
+
+-- =====================================================
+-- MIGRATIONS (applied safely on existing databases)
+-- =====================================================
+
+-- Add must_change_password column if it doesn't exist yet
+-- (idempotent: safe to run multiple times)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'must_change_password'
+    ) THEN
+        ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+    END IF;
+END $$;

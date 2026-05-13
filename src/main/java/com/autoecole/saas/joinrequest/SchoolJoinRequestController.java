@@ -89,7 +89,7 @@ public class SchoolJoinRequestController {
                 .map(r -> new JoinRequestDTO(
                         r.getId(),
                         r.getStudent().getId(),
-                        r.getStudent().getPrenom() + " " + r.getStudent().getNom(),
+                        r.getStudent().getFirstName() + " " + r.getStudent().getLastName(),
                         r.getStudent().getUser().getEmail(),
                         r.getStatus().name(),
                         r.getCreatedAt()))

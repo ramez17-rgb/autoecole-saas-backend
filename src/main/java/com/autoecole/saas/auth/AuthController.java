@@ -66,7 +66,6 @@ public class AuthController {
         if (setupToken.isExpired()) {
             throw new RuntimeException("Token expired");
         }
-
         if (setupToken.isUsed()) {
             throw new RuntimeException("Token already used");
         }
@@ -111,6 +110,39 @@ public class AuthController {
         return "Setup link sent to " + request.email();
     }
 
+    /**
+     * POST /api/auth/change-password
+     * Used by tenants who logged in with a provisional password.
+     * Verifies the current (provisional) password, sets the new one, and clears mustChangePassword.
+     */
+    @PostMapping("/change-password")
+    public String changePassword(
+            @RequestBody ChangePasswordRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        // Extract email from JWT
+        String authHeader = httpRequest.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Missing or invalid Authorization header");
+        }
+        String token = authHeader.substring(7);
+        String email = jwtService.extractUsername(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+
+        return "Password changed successfully";
+    }
+
     public record LoginRequest(String email, String password) {
     }
 
@@ -118,5 +150,8 @@ public class AuthController {
     }
 
     public record ResendLinkRequest(String email) {
+    }
+
+    public record ChangePasswordRequest(String currentPassword, String newPassword) {
     }
 }

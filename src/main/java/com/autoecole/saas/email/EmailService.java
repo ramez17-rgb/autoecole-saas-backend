@@ -31,4 +31,23 @@ public class EmailService {
             System.err.println("Failed to send email to " + to + ": " + e.getMessage());
         }
     }
+
+    public void sendPasswordSetupEmail(String email, String token) {
+    }
+
+    public void sendRejectionEmail(String to, String reason) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject("AutoEcole - Registration Rejected");
+            message.setText(
+                    "We regret to inform you that your driving school registration has been rejected.\n\n"
+                            + "Reason: " + (reason != null ? reason : "No reason provided") + "\n\n"
+                            + "Please contact support if you believe this is an error.");
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send rejection email to " + to + ": " + e.getMessage());
+        }
+    }
 }
