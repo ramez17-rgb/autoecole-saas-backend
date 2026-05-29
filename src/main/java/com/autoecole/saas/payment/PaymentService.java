@@ -84,7 +84,7 @@ public class PaymentService {
                 ? student.getUser().getFirstName() + " " + student.getUser().getLastName()
                 : "Élève inconnu";
         eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null,
-                "Paiement de " + amount + " DZD reçu de " + studentName));
+                "Paiement de " + amount + " DNT reçu de " + studentName));
 
         return savedPayment;
     }
