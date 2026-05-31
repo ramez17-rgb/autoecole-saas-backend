@@ -54,19 +54,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     }
                     UUID tenantId = jwtService.extractTenantId(jwt);
                     TenantContext.setTenantId(tenantId);
-                    // Inject the tenantId into the request attribute so controllers can access it
-                    // using @RequestAttribute
                     request.setAttribute("tenantId", tenantId);
-
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
                             jwtService.getAuthorities(user));
-
-                    // DEBUG: Log authorities
                     System.out.println("Authenticated User: " + user.getEmail());
                     System.out.println("Authorities: " + authToken.getAuthorities());
-
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource()
                                     .buildDetails(request));
@@ -75,12 +69,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // Log the error (optional) and continue without authentication
             System.err.println("JWT Authentication Warning: " + e.getMessage());
             e.printStackTrace();
-            // This allows public endpoints to work even if an invalid/expired token is sent
-            // Protected endpoints will still fail with 403/401 due to missing
-            // authentication
         }
         filterChain.doFilter(request, response);
         TenantContext.clear();
