@@ -33,3 +33,21 @@ public class MonitorController {
     }
 
 }
+
+@RestController
+@RequestMapping("/api/monitors")
+class PublicMonitorController {
+
+    private final MonitorService monitorService;
+
+    public PublicMonitorController(MonitorService monitorService) {
+        this.monitorService = monitorService;
+    }
+
+    @PostMapping("/register")
+    public Monitor register(@RequestBody PublicMonitorRegistrationRequest request) {
+        return monitorService.registerPublicMonitor(request.firstName(), request.lastName(), request.email(), request.password(), request.telephone());
+    }
+
+    public record PublicMonitorRegistrationRequest(String firstName, String lastName, String email, String password, String telephone) {}
+}

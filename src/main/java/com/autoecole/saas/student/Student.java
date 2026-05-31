@@ -1,14 +1,9 @@
 package com.autoecole.saas.student;
-
 import com.autoecole.saas.monitor.Monitor;
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -18,27 +13,19 @@ public class Student {
     @Id
     @GeneratedValue
     private UUID id;
-
-    // ✅ NEW FIELDS (FIX)
-    @Column(name = "nom")
-    private String nom;
-
-    @Column(name = "prenom")
-    private String prenom;
-
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "sessions"})
     @ManyToOne(optional = true)
     @JoinColumn(name = "main_monitor_id")
+    @JsonIgnoreProperties({"students", "tenant"})
     private Monitor mainMonitor;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "tenant_id", nullable = true)
+    @JsonIgnoreProperties({"students", "users"})
     private Tenant tenant;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "roles", "tenant"})
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"password", "roles", "tenant"})
     private User user;
 
     private String level;
@@ -49,35 +36,28 @@ public class Student {
     @Enumerated(EnumType.STRING)
     private StudentStatus status = StudentStatus.active;
 
+    @Column(name = "telephone", length = 20)
+    private String telephone;
+
     // ===== Constructors =====
     public Student() {
     }
 
-    @JsonIgnore
     @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
-    private List<com.autoecole.saas.session.Session> sessions = new ArrayList<>();
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<com.autoecole.saas.session.Session> sessions = new java.util.ArrayList<>();
+
+    public java.util.List<com.autoecole.saas.session.Session> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(java.util.List<com.autoecole.saas.session.Session> sessions) {
+        this.sessions = sessions;
+    }
 
     // ===== Getters & Setters =====
-
     public UUID getId() {
         return id;
-    }
-
-    // ✅ NEW GETTERS
-    public String getNom() {
-        return nom;
-    }
-
-    public String getPrenom() {
-        return prenom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
-
-    public void setPrenom(String prenom) {
-        this.prenom = prenom;
     }
 
     public Tenant getTenant() {
@@ -128,11 +108,35 @@ public class Student {
         this.mainMonitor = mainMonitor;
     }
 
-    public List<com.autoecole.saas.session.Session> getSessions() {
-        return sessions;
+    public String getTelephone() {
+        return telephone;
     }
 
-    public void setSessions(List<com.autoecole.saas.session.Session> sessions) {
-        this.sessions = sessions;
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("prenom")
+    public String getFirstName() {
+        return user != null ? user.getFirstName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("nom")
+    public String getLastName() {
+        return user != null ? user.getLastName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("email")
+    public String getEmail() {
+        return user != null ? user.getEmail() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("schoolName")
+    public String getSchoolName() {
+        return tenant != null ? tenant.getName() : null;
     }
 }

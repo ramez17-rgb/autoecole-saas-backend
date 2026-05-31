@@ -1,8 +1,8 @@
 package com.autoecole.saas.question.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public class CreateQuestionRequest {
@@ -13,11 +13,15 @@ public class CreateQuestionRequest {
     @NotBlank(message = "Question text cannot be blank")
     private String questionText;
 
-    @NotBlank(message = "Correct answer cannot be blank")
-    private String correctAnswer;
+    private String explanation;
+
+    private String imageUrl;
+
+    private String difficulty;
 
     @NotEmpty(message = "At least two options are required")
-    private List<String> options;
+    @Valid
+    private List<CreateQuestionOptionRequest> options;
 
     public CreateQuestionRequest() {
     }
@@ -38,19 +42,35 @@ public class CreateQuestionRequest {
         this.questionText = questionText;
     }
 
-    public String getCorrectAnswer() {
-        return correctAnswer;
+    public String getExplanation() {
+        return explanation;
     }
 
-    public void setCorrectAnswer(String correctAnswer) {
-        this.correctAnswer = correctAnswer;
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
     }
 
-    public List<String> getOptions() {
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public List<CreateQuestionOptionRequest> getOptions() {
         return options;
     }
 
-    public void setOptions(List<String> options) {
+    public void setOptions(List<CreateQuestionOptionRequest> options) {
         this.options = options;
     }
 }

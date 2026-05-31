@@ -1,11 +1,11 @@
 package com.autoecole.saas.payment;
 
 import com.autoecole.saas.student.Student;
-import com.autoecole.saas.student.Student;
 import com.autoecole.saas.tenant.Tenant;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -13,78 +13,60 @@ import java.util.UUID;
 public class Payment {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonIgnoreProperties({"students", "users"})
     private Tenant tenant;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"sessions", "tenant", "mainMonitor"})
     private Student student;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false)
     private BigDecimal amount;
 
     @Column(name = "payment_date", nullable = false)
-    private LocalDateTime paymentDate = LocalDateTime.now();
+    private LocalDate paymentDate;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private String mode = "cash";
 
-    public Payment() {
-    }
+    // Constructors
+    public Payment() {}
 
-    public UUID getId() {
-        return id;
-    }
+    // Getters & Setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public Tenant getTenant() { return tenant; }
+    public void setTenant(Tenant tenant) { this.tenant = tenant; }
 
-    public Tenant getTenant() {
-        return tenant;
-    }
+    public Student getStudent() { return student; }
+    public void setStudent(Student student) { this.student = student; }
 
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
-    }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public Student getStudent() {
-        return student;
-    }
+    public LocalDate getPaymentDate() { return paymentDate; }
+    public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
 
-    public void setStudent(Student student) {
-        this.student = student;
-    }
+    public String getMode() { return mode; }
+    public void setMode(String mode) { this.mode = mode; }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public LocalDateTime getPaymentDate() {
-        return paymentDate;
-    }
-
-    public void setPaymentDate(LocalDateTime paymentDate) {
-        this.paymentDate = paymentDate;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Object getTotalPrice() {
-        return null;
+    // Transient helper for student name in JSON
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("studentName")
+    public String getStudentName() {
+        if (student == null) return null;
+        String first = student.getFirstName();
+        String last = student.getLastName();
+        if (first != null || last != null) {
+            return ((first != null ? first : "") + " " + (last != null ? last : "")).trim();
+        }
+        return student.getEmail();
     }
 }

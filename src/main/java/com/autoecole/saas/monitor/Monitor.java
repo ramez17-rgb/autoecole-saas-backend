@@ -2,7 +2,6 @@ package com.autoecole.saas.monitor;
 
 import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.user.User;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -14,18 +13,16 @@ public class Monitor {
     @GeneratedValue
     private UUID id;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ManyToOne(optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "roles", "tenant"})
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    private String nom;
-    private String prenom;
+    @Column(name = "telephone", length = 20)
+    private String telephone;
 
     public Monitor() {
     }
@@ -56,19 +53,29 @@ public class Monitor {
         this.user = user;
     }
 
-    public String getNom() {
-        return nom;
+    public String getTelephone() {
+        return telephone;
     }
 
-    public void setNom(String nom) {
-        this.nom = nom;
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 
-    public String getPrenom() {
-        return prenom;
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("firstName")
+    public String getFirstName() {
+        return user != null ? user.getFirstName() : null;
     }
 
-    public void setPrenom(String prenom) {
-        this.prenom = prenom;
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("lastName")
+    public String getLastName() {
+        return user != null ? user.getLastName() : null;
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("email")
+    public String getEmail() {
+        return user != null ? user.getEmail() : null;
     }
 }

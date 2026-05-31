@@ -7,9 +7,12 @@ public class QuestionResponse {
     private UUID id;
     private String category;
     private String questionText;
+    private String explanation;
+    private String imageUrl;
+    private String difficulty;
     private List<QuestionOptionDto> options;
 
-    // We do not return the correct answer here to prevent cheating
+    // We do not return the correct answer to students during a test
 
     public QuestionResponse() {
     }
@@ -36,6 +39,30 @@ public class QuestionResponse {
 
     public void setQuestionText(String questionText) {
         this.questionText = questionText;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public List<QuestionOptionDto> getOptions() {

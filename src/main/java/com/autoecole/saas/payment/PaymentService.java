@@ -1,152 +1,91 @@
 package com.autoecole.saas.payment;
 
-import com.autoecole.saas.audit.AuditService;
-import com.autoecole.saas.payment.dto.PaymentProgressResponse;
-import com.autoecole.saas.payment.dto.PaymentRequest;
-import com.autoecole.saas.payment.dto.PaymentResponse;
-import com.autoecole.saas.payment.dto.PaymentStatsResponse;
 import com.autoecole.saas.student.Student;
 import com.autoecole.saas.student.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import com.autoecole.saas.tenant.Tenant;
+import com.autoecole.saas.tenant.TenantContext;
+import com.autoecole.saas.tenant.TenantRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Year;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
-    private final ReceiptRepository receiptRepository;
-    private final AuditService auditService;
-    private final QrCodeService qrCodeService;
-    private final PdfService pdfService;
-    private final ReceiptService receiptService;
+    private final TenantRepository tenantRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
-
-    @Autowired
-    public PaymentService(PaymentRepository paymentRepository,
-            StudentRepository studentRepository,
-            ReceiptRepository receiptRepository,
-            AuditService auditService,
-            QrCodeService qrCodeService,
-            PdfService pdfService,
-            ReceiptService receiptService) {
+    public PaymentService(PaymentRepository paymentRepository, StudentRepository studentRepository,
+            TenantRepository tenantRepository, org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
         this.studentRepository = studentRepository;
-        this.receiptRepository = receiptRepository;
-        this.auditService = auditService;
-        this.qrCodeService = qrCodeService;
-        this.pdfService = pdfService;
-        this.receiptService = receiptService;
+        this.tenantRepository = tenantRepository;
+        this.eventPublisher = eventPublisher;
+    }
+
+    public List<Payment> getAllPayments() {
+        UUID tenantId = TenantContext.getTenantId();
+        return paymentRepository.findByTenantIdOrderByPaymentDateDesc(tenantId);
+    }
+
+    public List<Payment> getPaymentsByStudent(UUID studentId) {
+        return paymentRepository.findByStudentId(studentId);
+    }
+
+    public Map<String, Object> getPaymentStats() {
+        UUID tenantId = TenantContext.getTenantId();
+        List<Payment> payments = paymentRepository.findByTenantId(tenantId);
+
+        BigDecimal totalRevenue = payments.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int numberOfPayments = payments.size();
+
+        BigDecimal averagePayment = numberOfPayments > 0
+                ? totalRevenue.divide(BigDecimal.valueOf(numberOfPayments), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalRevenue", totalRevenue);
+        stats.put("numberOfPayments", numberOfPayments);
+        stats.put("averagePayment", averagePayment);
+        stats.put("studentsFullyPaid", 0); // Can be enhanced later
+
+        return stats;
     }
 
     @Transactional
-    public PaymentResponse recordPayment(UUID tenantId, UUID userId, PaymentRequest request) {
-        Student student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
-
-        if (!student.getTenant().getId().equals(tenantId)) {
-            throw new RuntimeException("Student does not belong to the tenant");
-        }
-
-        // Save Payment
-        Payment payment = new Payment();
-        payment.setTenant(student.getTenant());
-        payment.setStudent(student);
-        payment.setAmount(request.getAmount());
-        Payment savedPayment = paymentRepository.save(payment);
-
-        auditService.log(tenantId, userId, "PAYMENT_CREATED");
-
-        // Generate Receipt
-        Receipt receipt = new Receipt();
-        receipt.setPayment(savedPayment);
-        receipt.setReceiptNumber(generateReceiptNumber());
-        receipt.setVerificationCode(UUID.randomUUID());
-        receipt.setSecurityHash(receiptService.calculateHash(
-                receipt.getReceiptNumber(),
-                savedPayment.getId(),
-                savedPayment.getAmount().toString()));
-
-        // Calculate Total Paid so far for PDF
-        BigDecimal totalPaid = paymentRepository.sumAmountByStudentId(student.getId());
-
-        // Generate QR Code
-        String verificationUrl = baseUrl + "/api/receipts/verify/" + receipt.getVerificationCode().toString();
-        byte[] qrCodeBytes = qrCodeService.generateQrCode(verificationUrl, 200, 200);
-
-        // Generate PDF
-        String pdfPath = pdfService.generateReceiptPdf(receipt, student, totalPaid, qrCodeBytes);
-        receipt.setPdfPath(pdfPath);
-
-        receiptRepository.save(receipt);
-
-        auditService.log(tenantId, userId, "RECEIPT_GENERATED");
-
-        return new PaymentResponse(
-                savedPayment.getId(),
-                student.getId(),
-                savedPayment.getAmount(),
-                savedPayment.getPaymentDate(),
-                pdfPath);
-    }
-
-    public PaymentProgressResponse getPaymentProgress(UUID studentId) {
+    public Payment createPayment(UUID studentId, BigDecimal amount, String mode) {
+        UUID tenantId = TenantContext.getTenantId();
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new RuntimeException("Tenant not found"));
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        BigDecimal totalPaid = paymentRepository.sumAmountByStudentId(studentId);
+        Payment payment = new Payment();
+        payment.setTenant(tenant);
+        payment.setStudent(student);
+        payment.setAmount(amount);
+        payment.setPaymentDate(LocalDate.now());
+        payment.setMode(mode != null ? mode : "cash");
 
-        return new PaymentProgressResponse(
-                student.getId(),
-                totalPaid);
-    }
+        Payment savedPayment = paymentRepository.save(payment);
+        String studentName = student.getUser() != null
+                ? student.getUser().getFirstName() + " " + student.getUser().getLastName()
+                : "Élève inconnu";
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null,
+                "Paiement de " + amount + " DNT reçu de " + studentName));
 
-    public PaymentStatsResponse getPaymentStats(UUID tenantId) {
-        BigDecimal totalRevenue = paymentRepository.sumAmountByTenantId(tenantId);
-        long numberOfPayments = paymentRepository.countByTenantId(tenantId);
-
-        BigDecimal averagePayment = BigDecimal.ZERO;
-        if (numberOfPayments > 0) {
-            averagePayment = totalRevenue.divide(new BigDecimal(numberOfPayments), 2, RoundingMode.HALF_UP);
-        }
-
-        return new PaymentStatsResponse(
-                totalRevenue,
-                numberOfPayments,
-                averagePayment);
-    }
-
-    public List<Map<String, Object>> getContracts(UUID tenantId) {
-        PaymentRepository contractRepository = null;
-        return contractRepository.findByTenantId(tenantId).stream().map(c -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", c.getId());
-            map.put("totalPrice", c.getTotalPrice());
-            String studentName = "";
-            if (c.getStudent() != null && c.getStudent().getUser() != null) {
-                studentName = c.getStudent().getUser().getEmail();
-            }
-            map.put("studentName", studentName);
-            return map;
-        }).collect(Collectors.toList());
-    }
-
-    private String generateReceiptNumber() {
-        int year = Year.now().getValue();
-        long count = receiptRepository.count() + 1;
-        return String.format("REC-%d-%04d", year, count);
+        return savedPayment;
     }
 }

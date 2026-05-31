@@ -20,13 +20,16 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final StudentRepository studentRepository;
     private final TenantRepository tenantRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public ExamService(ExamRepository examRepository,
             StudentRepository studentRepository,
-            TenantRepository tenantRepository) {
+            TenantRepository tenantRepository,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.examRepository = examRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public ExamResponse registerExam(RegisterExamRequest request) {
@@ -53,6 +56,10 @@ public class ExamService {
         exam.setStatus("planned");
 
         Exam savedExam = examRepository.save(exam);
+        
+        String studentName = student.getUser() != null ? student.getUser().getFirstName() + " " + student.getUser().getLastName() : "Élève inconnu";
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null, "Examen " + request.getType() + " planifié pour l'élève : " + studentName));
+        
         return mapToResponse(savedExam);
     }
 

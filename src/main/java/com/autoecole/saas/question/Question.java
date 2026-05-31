@@ -25,8 +25,14 @@ public class Question {
     @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
 
-    @Column(name = "correct_answer", nullable = false)
-    private String correctAnswer;
+    @Column(columnDefinition = "TEXT")
+    private String explanation;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(length = 10)
+    private String difficulty = "medium";
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -69,12 +75,28 @@ public class Question {
         this.questionText = questionText;
     }
 
-    public String getCorrectAnswer() {
-        return correctAnswer;
+    public String getExplanation() {
+        return explanation;
     }
 
-    public void setCorrectAnswer(String correctAnswer) {
-        this.correctAnswer = correctAnswer;
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public LocalDateTime getCreatedAt() {

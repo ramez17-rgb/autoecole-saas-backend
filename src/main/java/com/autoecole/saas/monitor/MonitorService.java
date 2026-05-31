@@ -23,18 +23,21 @@ public class MonitorService {
     private final TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public MonitorService(
             UserRepository userRepository,
             MonitorRepository monitorRepository,
             TenantRepository tenantRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.monitorRepository = monitorRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -46,7 +49,10 @@ public class MonitorService {
 
         // 1️⃣ Create USER
         User user = new User();
+        user.setFirstName(request.getPrenom());
+        user.setLastName(request.getNom());
         user.setEmail(request.getEmail());
+        user.setTelephone(request.getTelephone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // Handle Role
@@ -63,8 +69,51 @@ public class MonitorService {
         Monitor monitor = new Monitor();
         monitor.setUser(user);
         monitor.setTenant(tenant);
-        monitor.setNom(request.getNom());
-        monitor.setPrenom(request.getPrenom());
+        monitor.setTelephone(request.getTelephone());
+
+        Monitor savedMonitor = monitorRepository.save(monitor);
+        String monitorName = user.getFirstName() + " " + user.getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, user.getId(), "Moniteur créé : " + monitorName));
+        
+        return savedMonitor;
+    }
+
+    @Transactional
+    public Monitor registerPublicMonitor(String firstName, String lastName, String email, String password,
+            String telephone) {
+        // Find first active tenant since no tenant context is provided
+        Tenant tenant = tenantRepository.findAll().stream()
+                .filter(Tenant::isActive)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active tenant available for registration"));
+
+        // Check if email is already taken
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("Email is already taken: " + email);
+        }
+
+        // 1️⃣ Create USER
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setTelephone(telephone);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setTenant(tenant);
+        user.setStatus("active");
+
+        // Handle Role
+        RoleEntity role = roleRepository.findByName("MONITOR")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("MONITOR")));
+        user.getRoles().add(role);
+
+        userRepository.save(user);
+
+        // 2️⃣ Create MONITOR
+        Monitor monitor = new Monitor();
+        monitor.setUser(user);
+        monitor.setTenant(tenant);
+        monitor.setTelephone(telephone);
 
         return monitorRepository.save(monitor);
     }

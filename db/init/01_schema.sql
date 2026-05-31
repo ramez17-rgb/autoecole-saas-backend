@@ -30,15 +30,19 @@ CREATE TABLE tenants (
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-    tenant_id UUID,
-    nom VARCHAR(255) ,
-    prenom VARCHAR(255) ,
+    tenant_id UUID NOT NULL,
+
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT, -- NULL tant que le mot de passe n'est pas défini
+    prenom VARCHAR(100),
+    nom VARCHAR(100),
+    telephone VARCHAR(20),
 
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','disabled'))
         DEFAULT 'disabled',
+
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMP DEFAULT now(),
 
@@ -98,14 +102,12 @@ CREATE TABLE password_setup_tokens (
 -- =====================================================
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID,
-    nom VARCHAR(100),
-    prenom VARCHAR(100),
+    tenant_id UUID NOT NULL,
     user_id UUID NOT NULL UNIQUE,
     main_monitor_id UUID,
     level VARCHAR(50),
     hours_completed INT DEFAULT 0,
-    telephone Int,
+    telephone VARCHAR(20),
     status VARCHAR(20) NOT NULL
         CHECK (status IN ('active','archived'))
         DEFAULT 'active',
@@ -118,32 +120,10 @@ CREATE TABLE students (
         FOREIGN KEY (tenant_id)
         REFERENCES tenants(id)
         ON DELETE CASCADE,
+    CONSTRAINT fk_student_main_monitor
         FOREIGN KEY (main_monitor_id)
         REFERENCES monitors(id)
         ON DELETE SET NULL
-);
-
--- =====================================================
--- ENROLLMENT REQUESTS
--- =====================================================
-CREATE TABLE enrollment_requests (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL,
-    tenant_id UUID NOT NULL,
-    status VARCHAR(20) NOT NULL
-        CHECK (status IN ('PENDING','APPROVED','REJECTED','CANCELLED'))
-        DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT now(),
-
-    CONSTRAINT fk_en_req_student
-        FOREIGN KEY (student_id)
-        REFERENCES students(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_en_req_tenant
-        FOREIGN KEY (tenant_id)
-        REFERENCES tenants(id)
-        ON DELETE CASCADE
 );
 
 -- =====================================================
@@ -153,6 +133,7 @@ CREATE TABLE monitors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     user_id UUID NOT NULL UNIQUE,
+    telephone VARCHAR(20),
 
     CONSTRAINT fk_monitor_user
         FOREIGN KEY (user_id)
@@ -327,14 +308,16 @@ CREATE INDEX idx_audit_tenant ON audit_logs(tenant_id);
 
 
 -- =====================================================
--- MOCK TESTS & QUESTIONS (Sprint 4)
+-- MOCK TESTS & QUESTIONS (Sprint 4 – Refactored)
 -- =====================================================
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     category VARCHAR(100) NOT NULL,
     question_text TEXT NOT NULL,
-    correct_answer VARCHAR(255) NOT NULL,
+    explanation TEXT,
+    image_url TEXT,
+    difficulty VARCHAR(10) CHECK (difficulty IN ('easy', 'medium', 'hard')) DEFAULT 'medium',
     created_at TIMESTAMP DEFAULT now(),
     CONSTRAINT fk_questions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
@@ -343,6 +326,7 @@ CREATE TABLE question_options (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     question_id UUID NOT NULL,
     option_text VARCHAR(255) NOT NULL,
+    is_correct BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_qo_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
@@ -362,12 +346,62 @@ CREATE TABLE mock_test_answers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     mock_test_id UUID NOT NULL,
     question_id UUID NOT NULL,
-    selected_answer VARCHAR(255),
+    selected_option_id UUID NOT NULL,
     is_correct BOOLEAN,
     CONSTRAINT fk_mta_mock_test FOREIGN KEY (mock_test_id) REFERENCES mock_tests(id) ON DELETE CASCADE,
-    CONSTRAINT fk_mta_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    CONSTRAINT fk_mta_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mta_selected_option FOREIGN KEY (selected_option_id) REFERENCES question_options(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_questions_tenant ON questions(tenant_id);
+CREATE INDEX idx_question_options_question ON question_options(question_id);
 CREATE INDEX idx_mock_tests_tenant ON mock_tests(tenant_id);
 CREATE INDEX idx_mock_tests_student ON mock_tests(student_id);
+CREATE INDEX idx_mock_test_answers_mock_test ON mock_test_answers(mock_test_id);
+
+-- =====================================================
+-- SCHOOL JOIN REQUESTS (Student → School assignment)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS school_join_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID NOT NULL,
+    tenant_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('PENDING','APPROVED','REJECTED'))
+        DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT now(),
+    reviewed_at TIMESTAMP,
+    rejection_reason TEXT,
+
+    CONSTRAINT fk_sjr_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_sjr_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sjr_student ON school_join_requests(student_id);
+CREATE INDEX IF NOT EXISTS idx_sjr_tenant ON school_join_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sjr_status ON school_join_requests(status);
+
+-- Make students.tenant_id nullable (for independent student flow)
+ALTER TABLE students ALTER COLUMN tenant_id DROP NOT NULL;
+
+-- =====================================================
+-- MIGRATIONS (applied safely on existing databases)
+-- =====================================================
+
+-- Add must_change_password column if it doesn't exist yet
+-- (idempotent: safe to run multiple times)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'must_change_password'
+    ) THEN
+        ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+    END IF;
+END $$;

@@ -25,6 +25,7 @@ public class StudentService {
     private final TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public StudentService(
             MonitorRepository monitorRepository,
@@ -32,13 +33,15 @@ public class StudentService {
             StudentRepository studentRepository,
             TenantRepository tenantRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.monitorRepository = monitorRepository;
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -50,7 +53,10 @@ public class StudentService {
 
         // 1️⃣ Create USER automatically
         User user = new User();
+        user.setFirstName(request.getPrenom());
+        user.setLastName(request.getNom());
         user.setEmail(request.getEmail());
+        user.setTelephone(request.getTelephone());
         user.setPassword(passwordEncoder.encode(request.getPassword())); // Changed from setPasswordHash
 
         // Handle Role
@@ -62,17 +68,19 @@ public class StudentService {
         user.setStatus("active");
 
         userRepository.save(user);
+        System.out.println("StudentService.createStudent: saved user firstName=" + user.getFirstName() + ", lastName=" + user.getLastName() + ", email=" + user.getEmail());
 
-        // 2️⃣ Create STUDENT linked to user
         Student student = new Student();
         student.setUser(user);
         student.setTenant(tenant); // Changed from setTenantId
         student.setLevel(request.getLevel());
-        student.setNom(request.getNom());
-        student.setPrenom(request.getPrenom());
+        student.setTelephone(request.getTelephone());
         student.setStatus(StudentStatus.active);
 
-        return studentRepository.save(student);
+        Student savedStudent = studentRepository.save(student);
+        String studentName = user.getFirstName() + " " + user.getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, user.getId(), "Élève créé : " + studentName));
+        return savedStudent;
     }
 
     @Transactional
@@ -84,7 +92,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Student with ID " + studentId
                         + " not found. Make sure you are using the Student ID, not the User ID."));
 
-        if (!student.getTenant().getId().equals(tenantId)) {
+        if (student.getTenant() != null && !student.getTenant().getId().equals(tenantId)) {
             throw new RuntimeException(
                     "Student exists but belongs to a different tenant. Cross-tenant access forbidden.");
         }
@@ -99,17 +107,72 @@ public class StudentService {
         }
 
         student.setMainMonitor(monitor);
-        return studentRepository.save(student);
+        Student savedStudent = studentRepository.save(student);
+        
+        String monitorName = monitor.getUser().getFirstName() + " " + monitor.getUser().getLastName();
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+        eventPublisher.publishEvent(new com.autoecole.saas.audit.AuditLogEvent(this, tenantId, null, "Moniteur " + monitorName + " assigné à l'élève : " + studentName));
+        return savedStudent;
     }
 
     public List<Student> getAllStudents() {
-        return studentRepository.findByTenantId(TenantContext.getTenantId());
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return studentRepository.findAll();
+        return studentRepository.findByTenantId(tenantId);
+    }
+
+    public List<Student> getAllStudentsGlobal() {
+        return studentRepository.findAll();
     }
 
     public Student getStudent(UUID id) {
+        UUID tenantId = TenantContext.getTenantId();
         return studentRepository.findById(id)
-                .filter(s -> s.getTenant().getId().equals(TenantContext.getTenantId()))
+                .filter(s -> tenantId == null || (s.getTenant() != null && s.getTenant().getId().equals(tenantId)))
                 .orElseThrow(() -> new RuntimeException("Student not found"));
+    }
+
+    @Transactional
+    public Student registerPublicStudent(String firstName, String lastName, String email, String password, String level, String telephone) {
+        // For public registration, we need to associate with a tenant
+        // For now, use the first active tenant (this should be improved to allow tenant selection)
+        Tenant tenant = tenantRepository.findAll().stream()
+                .filter(Tenant::isActive)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active tenant available for registration"));
+
+        // Check if email is already taken
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("Email is already taken: " + email);
+        }
+
+        // 1️⃣ Create USER automatically
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setTelephone(telephone);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setTenant(tenant);
+        user.setStatus("active");
+
+        // Handle Role
+        RoleEntity role = roleRepository.findByName("STUDENT")
+                .orElseGet(() -> roleRepository.save(new RoleEntity("STUDENT")));
+        user.getRoles().add(role);
+
+        userRepository.save(user);
+        System.out.println("StudentService.registerPublicStudent: saved user firstName=" + user.getFirstName() + ", lastName=" + user.getLastName() + ", email=" + user.getEmail());
+
+        // 2️⃣ Create STUDENT linked to user
+        Student student = new Student();
+        student.setUser(user);
+        student.setTenant(tenant);
+        student.setLevel(level);
+        student.setStatus(StudentStatus.active);
+        student.setTelephone(telephone);
+
+        return studentRepository.save(student);
     }
 
     public void archiveStudent(UUID id) {

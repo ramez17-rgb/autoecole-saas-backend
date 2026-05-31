@@ -1,15 +1,12 @@
 package com.autoecole.saas.payment;
 
-import com.autoecole.saas.payment.dto.PaymentProgressResponse;
-import com.autoecole.saas.payment.dto.PaymentRequest;
-import com.autoecole.saas.payment.dto.PaymentResponse;
-import com.autoecole.saas.payment.dto.PaymentStatsResponse;
-import com.autoecole.saas.tenant.TenantContext;
-import com.autoecole.saas.user.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -18,34 +15,46 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @Autowired
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
 
-    @PostMapping
-    public PaymentResponse recordPayment(@RequestBody PaymentRequest request) {
-        UUID tenantId = TenantContext.getTenantId();
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UUID userId = currentUser.getId();
-
-        return paymentService.recordPayment(tenantId, userId, request);
-    }
-
-    @GetMapping("/progress/{studentId}")
-    public PaymentProgressResponse getPaymentProgress(@PathVariable UUID studentId) {
-        return paymentService.getPaymentProgress(studentId);
+    @GetMapping
+    public ResponseEntity<List<Payment>> getAllPayments() {
+        return ResponseEntity.ok(paymentService.getAllPayments());
     }
 
     @GetMapping("/stats")
-    public PaymentStatsResponse getPaymentStats() {
-        UUID tenantId = TenantContext.getTenantId();
-        return paymentService.getPaymentStats(tenantId);
+    public ResponseEntity<Map<String, Object>> getPaymentStats() {
+        return ResponseEntity.ok(paymentService.getPaymentStats());
     }
 
-    @GetMapping("/contracts")
-    public java.util.List<java.util.Map<String, Object>> getContracts() {
-        UUID tenantId = TenantContext.getTenantId();
-        return paymentService.getContracts(tenantId);
+    @PostMapping
+    public ResponseEntity<Payment> createPayment(@RequestBody CreatePaymentRequest request) {
+        Payment payment = paymentService.createPayment(
+                request.studentId(),
+                request.amount(),
+                request.mode()
+        );
+        return new ResponseEntity<>(payment, HttpStatus.CREATED);
+    }
+
+    public record CreatePaymentRequest(UUID studentId, BigDecimal amount, String mode) {}
+}
+
+// Student-facing payment endpoint
+@RestController
+@RequestMapping("/api/student/payments")
+class StudentPaymentController {
+
+    private final PaymentService paymentService;
+
+    public StudentPaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Payment>> getStudentPayments(@RequestParam UUID studentId) {
+        return ResponseEntity.ok(paymentService.getPaymentsByStudent(studentId));
     }
 }

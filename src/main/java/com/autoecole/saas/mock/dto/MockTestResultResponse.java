@@ -1,6 +1,7 @@
 package com.autoecole.saas.mock.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class MockTestResultResponse {
@@ -10,6 +11,7 @@ public class MockTestResultResponse {
     private Integer totalQuestions;
     private Boolean passed;
     private LocalDateTime takenAt;
+    private List<AnswerCorrectionDto> corrections;
 
     public MockTestResultResponse() {
     }
@@ -60,5 +62,13 @@ public class MockTestResultResponse {
 
     public void setTakenAt(LocalDateTime takenAt) {
         this.takenAt = takenAt;
+    }
+
+    public List<AnswerCorrectionDto> getCorrections() {
+        return corrections;
+    }
+
+    public void setCorrections(List<AnswerCorrectionDto> corrections) {
+        this.corrections = corrections;
     }
 }

@@ -73,6 +73,7 @@ public class JwtService {
                 .claim("role", roleNames.isEmpty() ? "" : roleNames.get(0))
                 .claim("tenantId",
                         user.getTenant() != null ? user.getTenant().getId() : null)
+                .claim("mustChangePassword", user.isMustChangePassword())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
