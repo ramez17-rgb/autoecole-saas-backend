@@ -8,8 +8,7 @@ import java.util.UUID;
 @RestController
 public class TenantTestController {
 
-    @GetMapping("" +
-            "")
+    @GetMapping("/api/test/tenant")
     public UUID getTenant() {
         return TenantContext.getTenantId();
     }
