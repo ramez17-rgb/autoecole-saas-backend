@@ -6,6 +6,8 @@ import com.autoecole.saas.tenant.Tenant;
 import com.autoecole.saas.tenant.TenantRepository;
 import com.autoecole.saas.user.User;
 import com.autoecole.saas.user.UserRepository;
+import com.autoecole.saas.notification.Notification;
+import com.autoecole.saas.notification.NotificationRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,16 +27,19 @@ public class SchoolJoinRequestController {
     private final StudentRepository studentRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     public SchoolJoinRequestController(
             SchoolJoinRequestRepository joinRequestRepository,
             StudentRepository studentRepository,
             TenantRepository tenantRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            NotificationRepository notificationRepository) {
         this.joinRequestRepository = joinRequestRepository;
         this.studentRepository = studentRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     // ─── PUBLIC: list all active schools (for student to browse) ───────────────
@@ -70,7 +75,24 @@ public class SchoolJoinRequestController {
         SchoolJoinRequest request = new SchoolJoinRequest();
         request.setStudent(student);
         request.setTenant(tenant);
-        joinRequestRepository.save(request);
+        SchoolJoinRequest saved = joinRequestRepository.save(request);
+
+        // Create notification for the school manager (avoid duplicates)
+        boolean notifExists = notificationRepository.existsByTenantIdAndRequestId(tenant.getId(), saved.getId());
+        if (!notifExists) {
+            String studentName = (student.getFirstName() != null ? student.getFirstName() : "") +
+                    " " + (student.getLastName() != null ? student.getLastName() : "");
+            studentName = studentName.trim();
+            if (studentName.isEmpty()) studentName = user.getEmail();
+            Notification notification = new Notification(
+                    tenant.getId(),
+                    student.getId(),
+                    studentName,
+                    saved.getId(),
+                    studentName + " souhaite rejoindre votre auto-école."
+            );
+            notificationRepository.save(notification);
+        }
 
         return "Request sent successfully";
     }

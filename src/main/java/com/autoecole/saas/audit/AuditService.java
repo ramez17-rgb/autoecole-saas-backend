@@ -3,6 +3,9 @@ package com.autoecole.saas.audit;
 import com.autoecole.saas.tenant.TenantRepository;
 import com.autoecole.saas.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +45,30 @@ public class AuditService {
         return auditLogRepository.findByTenantIdOrderByTimestampDesc(tenantId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<AuditLogDTO> getAllLogsPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        return auditLogRepository.findAllByOrderByTimestampDesc(pageable)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<AuditLogDTO> getLogsByTenantPaged(UUID tenantId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        return auditLogRepository.findByTenantIdOrderByTimestampDesc(tenantId, pageable)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public long getTotalCount() {
+        return auditLogRepository.count();
+    }
+
+    public long getTenantCount(UUID tenantId) {
+        return auditLogRepository.countByTenantId(tenantId);
     }
 
     private AuditLogDTO toDTO(AuditLog log) {

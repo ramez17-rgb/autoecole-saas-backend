@@ -85,4 +85,15 @@ public class SessionController {
     public ResponseEntity<List<SessionResponse>> getMonitorSessions(@RequestParam UUID monitorId) {
         return ResponseEntity.ok(sessionService.getMonitorSessions(monitorId));
     }
+
+    /**
+     * Get detailed info about a student from a session in the monitor's planning.
+     * The monitor must own the session (tenant check enforced in service).
+     */
+    @GetMapping("/monitor/sessions/{sessionId}/students/{studentId}/details")
+    public ResponseEntity<java.util.Map<String, Object>> getStudentDetailsForMonitor(
+            @PathVariable UUID sessionId,
+            @PathVariable UUID studentId) {
+        return ResponseEntity.ok(sessionService.getStudentDetailsForMonitor(sessionId, studentId));
+    }
 }

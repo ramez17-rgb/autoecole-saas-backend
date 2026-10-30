@@ -1,5 +1,23 @@
+# Environment variables and secrets
 .env
-target
+.env.*
+!.env.example
+
+# Maven build output
+target/
+
+# Logs
 *.log
-.idea
-.vscode
+
+# IDE files
+.idea/
+.vscode/
+
+# Database backups
+*.sql
+
+# Uploaded user files
+/uploads/
+
+# Nested duplicate Git repository
+/autoecole-saas-backend/

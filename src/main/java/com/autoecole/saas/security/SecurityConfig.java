@@ -30,7 +30,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200"));
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);
 
@@ -57,6 +57,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/monitors/register").permitAll()
                         // Public endpoints (school listing)
                         .requestMatchers("/api/public/**").permitAll()
+                        // Serve profile pictures publicly (no auth required to view)
+                        .requestMatchers(HttpMethod.GET, "/api/profile/pictures/**").permitAll()
                         // Role-based access
                         .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "TENANT_ADMIN", "SUPER_ADMIN")
@@ -68,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/stats/**").authenticated()
                         .requestMatchers("/api/messages/**").authenticated()
                         .requestMatchers("/api/audit/**").authenticated()
+                        .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

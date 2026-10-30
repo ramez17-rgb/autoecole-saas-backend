@@ -38,6 +38,9 @@ public class User {
     @Column(name = "must_change_password", nullable = false, columnDefinition = "boolean NOT NULL DEFAULT false")
     private boolean mustChangePassword = false;
 
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<RoleEntity> roles = new HashSet<>();
@@ -134,6 +137,14 @@ public class User {
 
     public void setMustChangePassword(boolean mustChangePassword) {
         this.mustChangePassword = mustChangePassword;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     {

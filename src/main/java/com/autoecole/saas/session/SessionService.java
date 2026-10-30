@@ -199,6 +199,94 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns detailed information about a student associated with a monitor's session.
+     * Verifies that the session belongs to the current tenant and that the student is in it.
+     */
+    public java.util.Map<String, Object> getStudentDetailsForMonitor(UUID sessionId, UUID studentId) {
+        UUID tenantId = getTenantId();
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        if (!session.getTenant().getId().equals(tenantId)) {
+            throw new RuntimeException("Access denied: Session does not belong to your school");
+        }
+
+        // Verify student is in this session
+        boolean studentInSession = session.getStudents().stream()
+                .anyMatch(s -> s.getId().equals(studentId));
+        if (!studentInSession) {
+            throw new RuntimeException("Student is not part of this session");
+        }
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        // Verify student belongs to the same tenant
+        if (student.getTenant() == null || !student.getTenant().getId().equals(tenantId)) {
+            throw new RuntimeException("Access denied: Student does not belong to your school");
+        }
+
+        // Calculate completed hours: sum of (endTime - startTime) for COMPLETED sessions
+        List<Session> studentSessions = sessionRepository.findByStudents_IdOrderBySessionDateDescStartTimeDesc(studentId);
+        int completedMinutes = 0;
+        int upcomingMinutes = 0;
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (Session s : studentSessions) {
+            if (s.getStatus() == SessionStatus.COMPLETED) {
+                int duration = (int) java.time.Duration.between(s.getStartTime(), s.getEndTime()).toMinutes();
+                if (duration > 0) completedMinutes += duration;
+            } else if (s.getStatus() == SessionStatus.PLANNED && !s.getSessionDate().isBefore(today)) {
+                int duration = (int) java.time.Duration.between(s.getStartTime(), s.getEndTime()).toMinutes();
+                if (duration > 0) upcomingMinutes += duration;
+            }
+        }
+
+        // Build response
+        java.util.Map<String, Object> details = new java.util.HashMap<>();
+        details.put("studentId", student.getId());
+        String sFirstName = student.getUser() != null ? student.getUser().getFirstName() : student.getFirstName();
+        String sLastName = student.getUser() != null ? student.getUser().getLastName() : student.getLastName();
+        details.put("firstName", sFirstName);
+        details.put("lastName", sLastName);
+        details.put("fullName", ((sFirstName != null ? sFirstName : "") + " " + (sLastName != null ? sLastName : "")).trim());
+        details.put("email", student.getUser() != null ? student.getUser().getEmail() : null);
+        details.put("telephone", student.getTelephone() != null ? student.getTelephone() : (student.getUser() != null ? student.getUser().getTelephone() : null));
+        details.put("status", student.getStatus() != null ? student.getStatus().name() : null);
+        details.put("level", student.getLevel());
+        details.put("profilePictureUrl", student.getUser() != null ? student.getUser().getProfilePictureUrl() : null);
+
+        // Driving hours
+        double completedHours = Math.round(completedMinutes / 60.0 * 10.0) / 10.0;
+        double upcomingHours = Math.round(upcomingMinutes / 60.0 * 10.0) / 10.0;
+        details.put("hoursCompleted", completedHours);
+        details.put("hoursScheduled", upcomingHours);
+        details.put("totalSessions", studentSessions.size());
+        details.put("completedSessions", studentSessions.stream().filter(s -> s.getStatus() == SessionStatus.COMPLETED).count());
+        details.put("plannedSessions", studentSessions.stream().filter(s -> s.getStatus() == SessionStatus.PLANNED).count());
+        details.put("cancelledSessions", studentSessions.stream().filter(s -> s.getStatus() == SessionStatus.CANCELLED).count());
+
+        // Upcoming sessions (max 3)
+        List<java.util.Map<String, Object>> upcomingList = studentSessions.stream()
+                .filter(s -> s.getStatus() == SessionStatus.PLANNED && !s.getSessionDate().isBefore(today))
+                .sorted(java.util.Comparator.comparing(Session::getSessionDate).thenComparing(Session::getStartTime))
+                .limit(3)
+                .map(s -> {
+                    java.util.Map<String, Object> item = new java.util.HashMap<>();
+                    item.put("sessionId", s.getId());
+                    item.put("sessionDate", s.getSessionDate().toString());
+                    item.put("startTime", s.getStartTime().toString());
+                    item.put("endTime", s.getEndTime().toString());
+                    item.put("status", s.getStatus().name());
+                    return item;
+                })
+                .collect(Collectors.toList());
+        details.put("upcomingSessions", upcomingList);
+
+        return details;
+    }
+
     private Session getSessionForTenant(UUID sessionId) {
         UUID tenantId = getTenantId();
         Session session = sessionRepository.findById(sessionId)
